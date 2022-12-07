@@ -3,6 +3,7 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
+#include <cv_bridge/cv_bridge.h>
 
 // custom msg
 #include "darknet_ros_msgs/BoundingBox.h"
@@ -13,7 +14,7 @@ struct BBoxInfo
     int xmin;
     int ymin;
     int xmax;
-    int ymax:
+    int ymax;
 };
 
 class RoombaMaskCreator

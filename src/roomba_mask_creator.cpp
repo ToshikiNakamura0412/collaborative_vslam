@@ -7,7 +7,7 @@ RoombaMaskCreator::RoombaMaskCreator():private_nh_("~")
 
     // Subscriber
     sub_img_  = nh_.subscribe("/image_raw", 1, &RoombaMaskCreator::img_callback, this);
-    sub_bbox_ = nh_.subscribe("/bbox", 1, );
+    sub_bbox_ = nh_.subscribe("/bboxes", 1, &RoombaMaskCreator::bbox_callback, this);
 
     // Publisher
     pub_mask_img_ = nh_.advertise<sensor_msgs::Image>("/mask_image", 1);
@@ -52,7 +52,8 @@ void RoombaMaskCreator::creat_mask(const sensor_msgs::Image& ros_img)
 {
     if(flag_bbox_)
     {
-
+        pub_mask_img_.publish(ros_img);
+        ROS_INFO_STREAM("here");
     }
     else
     {

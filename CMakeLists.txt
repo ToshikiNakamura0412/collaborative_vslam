@@ -8,6 +8,9 @@ add_compile_options(-std=c++11 -O2 -g -Wall)
 find_package(catkin REQUIRED COMPONENTS
     roscpp
     std_msgs
+    sensor_msgs
+    cv_bridge
+    darknet_ros_msgs
 )
 
 ###################################
@@ -27,13 +30,13 @@ catkin_package(
 include_directories(include ${catkin_INCLUDE_DIRS})
 
 ## Declare a C++ library
-# add_library(${PROJECT_NAME src/${PROJECT_NAME}/collaborative_vslam.cpp)
+add_library(roomba_mask_creator src/roomba_mask_creator.cpp)
 
 ## Declare a C++ executable
-# add_executable(${PROJECT_NAME}_node src/collaborative_vslam_node.cpp)
+add_executable(roomba_mask_creator_node src/roomba_mask_creator_node.cpp)
 
 ## Add cmake target dependencies of the executable
-# add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(roomba_mask_creator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES})
+target_link_libraries(roomba_mask_creator_node roomba_mask_creator ${catkin_LIBRARIES})
