@@ -27,12 +27,14 @@ private:
     void bbox_callback(const darknet_ros_msgs::BoundingBoxesConstPtr& msg);
 
     void to_cv_img(const sensor_msgs::Image& ros_img, cv::Mat& cv_img);
-    void creat_mask();
+    void creat_mask(const sensor_msgs::Image& ros_img);
 
 
     int hz_;
     BBoxInfo bbox_info_;
 
+    // bool flag_img_ = false;
+    bool flag_bbox_ = false;
 
 
     // NodeHandle
