@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>collaborative_vslam</name>
+  <version>0.0.0</version>
+  <description>The collaborative_vslam package</description>
+  <maintainer email="amsl@todo.todo">amsl</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>std_msgs</build_depend>
+
+  <export>
+  </export>
+</package>
