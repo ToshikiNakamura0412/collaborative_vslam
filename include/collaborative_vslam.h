@@ -3,10 +3,10 @@
 
 #include <ros/ros.h>
 
-class CollaborativeVslam
+class CollaborativeVSLAM
 {
 public:
-    CollaborativeVslam();
+    CollaborativeVSLAM();
     void process();
 private:
     void mappoints_callback(const sensor_msgs::PointCloud2::ConstPtr& msg);
