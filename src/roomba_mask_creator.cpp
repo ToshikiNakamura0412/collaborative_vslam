@@ -68,10 +68,15 @@ void RoombaMaskCreator::mask_roomba(const sensor_msgs::Image& ros_img, cv::Mat& 
     to_cv_img(ros_img, mask_img);
 
     const int x_L    = bbox_info_.xmin;
+    const int x_R    = bbox_info_.xmax;
     const int y_U    = bbox_info_.ymin;
-    const int width  = bbox_info_.xmax - bbox_info_.xmin;
-    const int height = bbox_info_.ymax - bbox_info_.ymin;
-    cv::rectangle(mask_img, cv::Rect(x_L, y_U, width, height), cv::Scalar(255, 0, 0), -1);
+    const int y_D    = bbox_info_.ymax;
+
+    cv::Vec3b *ptr = (cv::Vec3b*)mask_img.ptr();
+    const int step = mask_img.step / sizeof(cv::Vec3b);
+    for(int y = y_U; y < y_D; ++y)
+        for(int x = x_L; x < x_R; ++x)
+            ptr[y*step + x] = ptr[y*step + x - 1];
 }
 
 void RoombaMaskCreator::to_cv_img(const sensor_msgs::Image& ros_img, cv::Mat& output_img)
