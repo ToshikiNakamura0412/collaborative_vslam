@@ -9,6 +9,8 @@
 #include "darknet_ros_msgs/BoundingBox.h"
 #include "darknet_ros_msgs/BoundingBoxes.h"
 
+
+// ===== Struct =====
 struct BBoxInfo
 {
     int xmin;
@@ -17,6 +19,7 @@ struct BBoxInfo
     int ymax;
 };
 
+// ===== Class =====
 class RoombaMaskCreator
 {
 public:
@@ -24,19 +27,17 @@ public:
     void process();
 
 private:
+    // Function
     void img_callback(const sensor_msgs::ImageConstPtr& msg);
     void bbox_callback(const darknet_ros_msgs::BoundingBoxesConstPtr& msg);
+    void creat_mask_img(const sensor_msgs::Image& ros_img);
+    void mask_roomba(const sensor_msgs::Image& ros_img, cv::Mat& mask_img);
+    void to_cv_img(const sensor_msgs::Image& ros_img, cv::Mat& output_img);
 
-    void to_cv_img(const sensor_msgs::Image& ros_img, cv::Mat& cv_img);
-    void creat_mask(const sensor_msgs::Image& ros_img);
-
-
+    // Variable
     int hz_;
-    BBoxInfo bbox_info_;
-
-    // bool flag_img_ = false;
     bool flag_bbox_ = false;
-
+    BBoxInfo bbox_info_;
 
     // NodeHandle
     ros::NodeHandle nh_;
@@ -49,7 +50,5 @@ private:
     // Publisher
     ros::Publisher pub_mask_img_;
 };
-
-
 
 #endif

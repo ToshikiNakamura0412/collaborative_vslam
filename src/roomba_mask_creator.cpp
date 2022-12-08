@@ -2,7 +2,7 @@
 
 RoombaMaskCreator::RoombaMaskCreator():private_nh_("~")
 {
-    // パラメータの取得
+    // Parameter
     private_nh_.getParam("hz", hz_);
 
     // Subscriber
@@ -45,15 +45,17 @@ void RoombaMaskCreator::bbox_callback(const darknet_ros_msgs::BoundingBoxesConst
 
 void RoombaMaskCreator::img_callback(const sensor_msgs::ImageConstPtr& msg)
 {
-    creat_mask(*msg);
+    creat_mask_img(*msg);
 }
 
-void RoombaMaskCreator::creat_mask(const sensor_msgs::Image& ros_img)
+void RoombaMaskCreator::creat_mask_img(const sensor_msgs::Image& ros_img)
 {
     if(flag_bbox_)
     {
-        pub_mask_img_.publish(ros_img);
-        ROS_INFO_STREAM("here");
+        cv::Mat mask_img;
+        mask_roomba(ros_img, mask_img);
+        sensor_msgs::ImageConstPtr img_msg = cv_bridge::CvImage(ros_img.header, "bgr8", mask_img).toImageMsg();
+        pub_mask_img_.publish(img_msg);
     }
     else
     {
@@ -61,6 +63,32 @@ void RoombaMaskCreator::creat_mask(const sensor_msgs::Image& ros_img)
     }
 }
 
-void RoombaMaskCreator::to_cv_img(const sensor_msgs::Image& ros_img, cv::Mat& cv_img)
+void RoombaMaskCreator::mask_roomba(const sensor_msgs::Image& ros_img, cv::Mat& mask_img)
 {
+    to_cv_img(ros_img, mask_img);
+
+    const int x_L    = bbox_info_.xmin;
+    const int y_U    = bbox_info_.ymin;
+    const int width  = bbox_info_.xmax - bbox_info_.xmin;
+    const int height = bbox_info_.ymax - bbox_info_.ymin;
+    cv::rectangle(mask_img, cv::Rect(x_L, y_U, width, height), cv::Scalar(255, 0, 0), -1);
+}
+
+void RoombaMaskCreator::to_cv_img(const sensor_msgs::Image& ros_img, cv::Mat& output_img)
+{
+    cv_bridge::CvImageConstPtr cv_image_ptr;
+    try
+    {
+        cv_image_ptr = cv_bridge::toCvCopy(ros_img, sensor_msgs::image_encodings::BGR8);
+    }
+    catch (cv_bridge::Exception &ex)
+    {
+        ROS_ERROR_STREAM("cv_bridge exception: " << ex.what());
+        return;
+    }
+
+    cv::Mat cv_image(cv_image_ptr->image.rows, cv_image_ptr->image.cols, cv_image_ptr->image.type());
+    cv_image = cv_image_ptr->image;
+    output_img = std::move(cv_image);
+    return;
 }
