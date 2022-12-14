@@ -6,7 +6,6 @@ CollaborativeVSLAM::CollaborativeVSLAM():private_nh_("~")
     // for collaborative system
     private_nh_.getParam("hz", hz_);
     private_nh_.Param("map_frame_id", map_frame_id_, "map");
-    private_nh_.Param("leader_frame_id", leader_frame_id_, "leader");
     private_nh_.Param("flag_init_scale_rate", flag_init_scale_rate_, false);
     // for leader robot
     private_nh_.Param("leader_lost_count", leader_lost_count_, 0);
@@ -37,7 +36,7 @@ CollaborativeVSLAM::CollaborativeVSLAM():private_nh_("~")
     follower_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/follower/collaborative_pose", 1);
 
     // frame idの設定
-    leader_pose_.header = leader_frame_id_;
+    leader_pose_.header = map_frame_id_;
 }
 
 
@@ -130,11 +129,16 @@ void CollaborativeVSLAM::co_localize()
 {
     if(leader_flag_lost_)
     {
-        calc_leader_pos(leader_pose_.pose.position.x, leader_pose_.pose.position.z);
+        calc_leader_pose();
     }
 
-    broadcast_leader_state();
     leader_pose_pub_.publish(leader_pose_);
+}
+
+void CollaborativeVSLAM::calc_leader_pose();
+{
+    calc_leader_pos(leader_pose_.pose.position.x, leader_pose_.pose.position.z);
+    calc_leader_quat(leader_pose_.pose.orientation);
 }
 
 void CollaborativeVSLAM::calc_leader_pos(float& leader_x, float& leader_z);
@@ -150,41 +154,22 @@ void CollaborativeVSLAM::calc_leader_pos(float& leader_x, float& leader_z);
     leader_z = follower_z - leader_x_from_follower * sin(follower_pitch) + leader_z_from_follower * cos(follower_pitch);
 }
 
-void CollaborativeVSLAM::broadcast_leader_state()
+void CollaborativeVSLAM::calc_leader_quat(geometry_msgs::Quaternion& leader_quat_msg)
 {
-    static tf2_ros::TransformBroadcaster leader_state_broadcaster;
-    const double map_to_leader_pitch = normalize_angle();
-    const double map_to_leader_x     = ;
-    const double map_to_leader_y     = ;
+    const float follower_pitch = tf2::getPitch(follower_pose_.pose.orientation);
+    const float follower_x     = follower_pose_.pose.position.x;
+    const float follower_z     = follower_pose_.pose.position.z;
+    const float leader_pitch   = -M_PI + follower_pitch + atan2(follower_x, follower_z) + leader_relative_angle_.radian;
+    leader_pitch = normalize_angle(leader_pitch);
 
-    // pitchからquaternionを作成
-    tf2::Quaternion map_to_leader_quat;
-    map_to_leader_quat.setRPY(0, map_to_leader_pitch, 0);
-
-    // odom座標系の元となodomの位置姿勢情報格納用変数の作成
-    geometry_msgs::TransformStamped leader_state;
-
-    // 現在の時間の格納
-    leader_state.header.stamp = ros::Time::now();
-
-    // 親フレーム・子フレームの指定
-    leader_state.header.frame_id = map_.header.frame_id;
-    leader_state.child_frame_id  = last_odom_.header.frame_id;
-
-    // map座標系からみたleader座標系の原点位置と方向の格納
-    leader_state.transform.translation.x = map_to_leader_x;
-    leader_state.transform.translation.y = map_to_leader_y;
-    leader_state.transform.rotation.x    = map_to_leader_quat.x();
-    leader_state.transform.rotation.y    = map_to_leader_quat.y();
-    leader_state.transform.rotation.z    = map_to_leader_quat.z();
-    leader_state.transform.rotation.w    = map_to_leader_quat.w();
-
-    // tf情報をbroadcast(座標系の設定)
-    leader_state_broadcaster.sendTransform(leader_state);
+    // pitchからquaternionを算出
+    tf2::Quaternion leader_quat;
+    leader_quat.setRPY(0, leader_pitch, 0);
+    quaternionTFToMsg(leader_quat, leader_quat_msg);
 }
 
 // 適切な角度(-M_PI ~ M_PI)を返す
-double CollaborativeVSLAM::normalize_angle(double angle)
+float CollaborativeVSLAM::normalize_angle(float angle)
 {
     while(M_PI  < angle) angle -= 2.0*M_PI;
     while(angle < -M_PI) angle += 2.0*M_PI;

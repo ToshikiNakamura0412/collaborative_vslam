@@ -37,19 +37,21 @@ private:
     void follower_map_merge_sign_callback(const std_msgs::Bool::ConstPtr& msg);
     void follower_relative_pos_callback(const object_detector_msgs::ObjectPositions::ConstPtr& msg);
     // other function
-    void   co_vslam();
-    void   co_localize();
-    void   co_mapping();
-    void   calc_leader_pos(float& leader_x, float& leader_z);
-    void   tf_follow_pose();
-    void   broadcast_leader_state()
-    double normalize_angle(double angle);
+    void  co_vslam();
+    void  co_localize();
+    void  co_mapping();
+    void  calc_leader_pose();
+    void  calc_leader_pos(float& leader_x, float& leader_z);
+    void  calc_leader_quat(geometry_msgs::Quaternion& leader_quat_msg);
+    void  tf_follow_pose();
+    void  broadcast_leader_state()
+    float normalize_angle(float angle);
 
     // ----- Variable -----
     // for collaborative system
     int hz_;
     bool flag_init_scale_rate_;
-    std::string map_frame_id_, leader_frame_id_;
+    std::string map_frame_id_;
 
     // for leader robot
     int leader_lost_count_;
@@ -96,7 +98,7 @@ private:
     geometry_msgs::PoseStamped            follower_pose_;
     object_detector_msgs::ObjectPosition  follower_relative_pos_;
     // collaborative leader info
-    sensor_msgs::PointCloud2              leader_co_pose_;
+    // sensor_msgs::PointCloud2              leader_co_pose_;
     sensor_msgs::PointCloud2              leader_co_map_;
 
 };
