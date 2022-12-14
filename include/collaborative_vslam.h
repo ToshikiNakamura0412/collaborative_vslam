@@ -45,12 +45,24 @@ private:
     void  calc_leader_quat(geometry_msgs::Quaternion& leader_quat_msg);
     void  tf_follow_pose();
     void  broadcast_leader_state()
+    void  init_scale_ratio();
     float normalize_angle(float angle);
+    float calc_hypot(geometry_msgs::Point last_point, geometry_msgs::Point prev_point);
 
     // ----- Variable -----
     // for collaborative system
-    int hz_;
-    bool flag_init_scale_rate_;
+    // base
+    int   hz_;
+    // init scale ratio
+    bool  flag_move_;
+    bool  is_initialized_;
+    float move_dist_th_;
+    float scale_ratio_;
+    float scale_ratio_th_percent_;
+    float wheel_dist_for_init_;
+    float visual_dist_for_init_;
+    double duration_init_;
+    // frame id
     std::string map_frame_id_;
 
     // for leader robot
@@ -60,7 +72,7 @@ private:
     std_msgs::Bool leader_flag_lost_;
     std_msgs::Bool leader_flag_map_merge_;
     // for follower robot
-    int follower_lost_count_;
+    int   follower_lost_count_;
     std_msgs::Bool follower_flag_visual_init_;
     std_msgs::Bool follower_flag_lost_;
     std_msgs::Bool follower_flag_map_merge_;
@@ -88,7 +100,8 @@ private:
     ros::Publisher follower_pose_pub_;
 
     // leader info
-    geometry_msgs::PoseStamped            leader_pose_;
+    geometry_msgs::PoseStamped            leader_last_pose_;
+    geometry_msgs::PoseStamped            leader_prev_pose_;
     sensor_msgs::PointCloud2              leader_active_map_;
     std::vector<sensor_msgs::PointCloud2> leader_all_map_;
     nav_msgs::Odometry                    leader_last_odom_; // 最新のodometry
