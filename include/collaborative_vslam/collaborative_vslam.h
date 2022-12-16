@@ -2,11 +2,11 @@
 #define COLLABORATIVE_VSLAM_H
 
 #include <ros/ros.h>
-#include <std_msgs/bool.h>
+#include <std_msgs/Bool.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <tf2/utils.h>
+#include <tf/transform_broadcaster.h>
 
 // custom msg
 #include <color_detector_msgs/TargetAngle.h>
@@ -41,19 +41,20 @@ private:
     void  co_localize();
     void  co_mapping();
     void  calc_leader_pose();
-    void  calc_leader_pos(float& leader_x, float& leader_z);
+    void  calc_leader_pos(double& leader_x, double& leader_z);
     void  calc_leader_quat(geometry_msgs::Quaternion& leader_quat_msg);
     void  tf_follow_pose();
-    void  broadcast_leader_state()
+    void  broadcast_leader_state();
     void  init_scale_ratio();
     float normalize_angle(float angle);
     float calc_hypot(geometry_msgs::Point last_point, geometry_msgs::Point prev_point);
+    float getPitch(geometry_msgs::Quaternion& quat_msg);
 
     // ----- Variable -----
     // for collaborative system
-    // base
+    // - base
     int   hz_;
-    // init scale ratio
+    // - init scale ratio
     bool  flag_move_;
     bool  is_initialized_;
     float move_dist_th_;
@@ -62,17 +63,18 @@ private:
     float wheel_dist_for_init_;
     float visual_dist_for_init_;
     double duration_init_;
-    // frame id
+    ros::Time init_begin_;
+    // - frame id
     std::string map_frame_id_;
 
     // for leader robot
     int leader_lost_count_;
-    double leader_map_scale_rate_;
+    // double leader_map_scale_rate_;
     std_msgs::Bool leader_flag_visual_init_;
     std_msgs::Bool leader_flag_lost_;
     std_msgs::Bool leader_flag_map_merge_;
     // for follower robot
-    int   follower_lost_count_;
+    int follower_lost_count_;
     std_msgs::Bool follower_flag_visual_init_;
     std_msgs::Bool follower_flag_lost_;
     std_msgs::Bool follower_flag_map_merge_;

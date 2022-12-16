@@ -1,4 +1,4 @@
-#include "collaborative_vslam.h"
+#include "collaborative_vslam/collaborative_vslam.h"
 
 int main(int argc, char* argv[])
 {
