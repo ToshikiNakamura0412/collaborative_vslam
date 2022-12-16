@@ -1,4 +1,4 @@
-#include "roomba_mask_creator.h"
+#include "collaborative_vslam/roomba_mask_creator.h"
 
 RoombaMaskCreator::RoombaMaskCreator():private_nh_("~")
 {
