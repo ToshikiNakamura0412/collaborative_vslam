@@ -32,6 +32,7 @@ private:
     double visual_dist_for_init_;
     ros::Time init_begin_;
     std_msgs::Bool flag_init_visual_;
+    std_msgs::Bool flag_init_ratio_;
     std_msgs::Float64 scale_ratio_;
 
     // NodeHandle
@@ -45,6 +46,7 @@ private:
 
     // Publisher
     ros::Publisher init_visual_pub_;
+    ros::Publisher init_ratio_pub_;
     ros::Publisher ratio_pub_;
 
     // Info

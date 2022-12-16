@@ -12,17 +12,17 @@ ScaleRatioInitializer::ScaleRatioInitializer():private_nh_("~")
     wheel_dist_for_init_   = 0.0;
     visual_dist_for_init_  = 0.0;
     scale_ratio_.data      = 0.0;
-    is_initialized_        = false;
+    flag_init_ratio_.data        = false;
     flag_lost_             = false;
     flag_init_visual_.data = false;
-    
+
     // Subscriber
     pose_sub_       = nh_.subscribe("/pose", 1, &ScaleRatioInitializer::pose_callback, this);
     wheel_odom_sub_ = nh_.subscribe("/wheel_odom", 1, &ScaleRatioInitializer::wheel_odom_callback, this);
     lost_sign_sub_  = nh_.subscribe("/lost_sign", 1, &ScaleRatioInitializer::lost_sign_callback, this);
 
     // Publisher
-    init_visual_pub_ = nh_.advertise<std_msgs::Bool>("/flag_init_visual", 1);
+    init_visual_pub_ = nh_.advertise<std_msgs::Bool>("/init_sign", 1);
     ratio_pub_       = nh_.advertise<std_msgs::Float64>("/scale_ratio", 1);
 }
 
@@ -72,7 +72,7 @@ void ScaleRatioInitializer::lost_sign_callback(const std_msgs::Bool::ConstPtr& m
 
 void ScaleRatioInitializer::init_scale_ratio()
 {
-    if(not flag_init_visual_.data or is_initialized_) return;
+    if(not flag_init_visual_.data or flag_init_ratio_.data) return;
 
     const double elapsed_time = ros::Time::now().toSec() - init_begin_.toSec();
     if(elapsed_time < duration_init_) // 移動量を加算
@@ -83,18 +83,21 @@ void ScaleRatioInitializer::init_scale_ratio()
     else // スケール比を計算
     {
         const double new_ratio = visual_dist_for_init_ / wheel_dist_for_init_;
-        is_initialized_ = fabs((scale_ratio_.data - new_ratio)/scale_ratio_.data) < scale_ratio_th_percent_/100.0;
+        flag_init_ratio_.data = fabs((scale_ratio_.data - new_ratio)/scale_ratio_.data) < scale_ratio_th_percent_/100.0;
 
         ROS_INFO_STREAM("---");
         ROS_INFO_STREAM("old_ratio = " << scale_ratio_.data << "[%]");
         ROS_INFO_STREAM("new_ratio = " << new_ratio << "[%]");
-        ROS_INFO_STREAM("ratio_diff = " << fabs((scale_ratio_.data - new_ratio)/scale_ratio_.data)*100.0 << "[%] | goal = " << scale_ratio_th_percent_ << "[%] | flag_init -> " << is_initialized_);
+        ROS_INFO_STREAM("ratio_diff = " << fabs((scale_ratio_.data - new_ratio)/scale_ratio_.data)*100.0 << "[%] | goal = " << scale_ratio_th_percent_ << "[%] | flag_init -> " << flag_init_ratio_.data);
 
         scale_ratio_.data = new_ratio;
         init_begin_ = ros::Time::now(); // 初回化スタート時間の設定
 
-        if(is_initialized_)
+        if(flag_init_ratio_.data)
+        {
             ratio_pub_.publish(scale_ratio_);
+            init_ratio_pub_.publish(flag_init_ratio_);
+        }
     }
 }
 
