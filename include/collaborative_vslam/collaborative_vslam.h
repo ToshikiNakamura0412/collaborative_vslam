@@ -15,6 +15,8 @@
 #include <object_detector_msgs/ObjectPosition.h>
 #include <object_detector_msgs/ObjectPositions.h>
 
+#include "collaborative_vslam/point.h"
+
 class CollaborativeVSLAM
 {
 public:
@@ -50,9 +52,19 @@ private:
     void  calc_leader_quat(geometry_msgs::Quaternion& leader_quat_msg);
     void  tf_follow_pose();
     void  broadcast_leader_state();
+    void  rotate_pitch(const object_detector_msgs::ObjectPosition& input_point, const double pitch, Point& output_point);
+    void  rotate_pitch(const geometry_msgs::Point& input_point, const double pitch, Point& output_point);
+    Point adjust_follower_scale_to_leader(const Point point);
+    Point adjust_leader_scale_to_follower(const Point point);
+    Point adjust_scale_to_leader(const Point point);
+    Point adjust_scale_to_follower(const Point point);
+    void  set_tf_for_map();
     bool  can_set_tf_for_map();
-    float normalize_angle(float angle);
-    float getPitch(geometry_msgs::Quaternion& quat_msg);
+    bool  is_init_leader();
+    bool  is_init_follower();
+    double normalize_angle(double angle);
+    double getPitch(geometry_msgs::Quaternion& quat_msg);
+
 
     // ----- Variable -----
     // for collaborative system
@@ -74,7 +86,7 @@ private:
     std_msgs::Bool follower_flag_init_ratio_;
     std_msgs::Bool follower_flag_lost_;
     std_msgs::Bool follower_flag_map_merge_;
-    geometry_msgs::Point follower_tf_to_leader_;
+    Point follower_tf_to_leader_;
 
     // NodeHandle
     ros::NodeHandle nh_;

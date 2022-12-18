@@ -143,20 +143,79 @@ void CollaborativeVSLAM::follower_relative_pos_callback(const object_detector_ms
             follower_relative_pos_ = obj;
 
     if(can_set_tf_for_map())
-    {
-        follower_tf_to_leader_.x = leader_pose_.pose.position.x - follower_relative_pos_.x - follower_pose_.pose.position.x;
-        follower_tf_to_leader_.y = 0.0;
-        follower_tf_to_leader_.z = leader_pose_.pose.position.z - follower_relative_pos_.z - follower_pose_.pose.position.z;
-        follower_flag_get_tf_ = true;
-    }
+        set_tf_for_map();
+}
+
+void CollaborativeVSLAM::set_tf_for_map()
+{
+    const Point leader_pos(leader_pose_.pose.position);
+    const Point follower_pos(follower_pose_.pose.position);
+    const double follower_pitch = getPitch(follower_pose_.pose.orientation);
+    Point relative_pos;
+
+    rotate_pitch(follower_relative_pos_, follower_pitch, relative_pos); // 回転
+
+    follower_tf_to_leader_ =
+        leader_pos - adjust_scale_to_leader(relative_pos) - adjust_follower_scale_to_leader(follower_pos);
+
+    follower_flag_get_tf_ = true;
+
+    // debug
+    ros::Publisher follower_map_origin_pub;
+    follower_map_origin_pub = nh_.advertise<geometry_msgs::Point>("/follower/map_origin", 1);
+    geometry_msgs::Point follower_map_origin;
+    follower_map_origin.x = follower_tf_to_leader_.x;
+    follower_map_origin.y = 0.0;
+    follower_map_origin.z = follower_tf_to_leader_.z;
+    follower_map_origin_pub.publish(follower_map_origin);
+}
+
+Point CollaborativeVSLAM::adjust_follower_scale_to_leader(const Point point)
+{
+    return adjust_scale_to_leader(point) / follower_scale_ratio_;
+}
+
+Point CollaborativeVSLAM::adjust_leader_scale_to_follower(const Point point)
+{
+    return adjust_scale_to_follower(point) / leader_scale_ratio_;
+}
+
+Point CollaborativeVSLAM::adjust_scale_to_leader(const Point point)
+{
+    return point * leader_scale_ratio_;
+}
+
+Point CollaborativeVSLAM::adjust_scale_to_follower(const Point point)
+{
+    return point * follower_scale_ratio_;
+}
+
+void CollaborativeVSLAM::rotate_pitch(const object_detector_msgs::ObjectPosition& input_point, const double pitch, Point& output_point)
+{
+    const double x =  input_point.x*cos(pitch) + input_point.z*sin(pitch);
+    const double z = -input_point.x*sin(pitch) + input_point.z*cos(pitch);
+    output_point.set(x, z);
+}
+void CollaborativeVSLAM::rotate_pitch(const geometry_msgs::Point& input_point, const double pitch, Point& output_point)
+{
+    const double x =  input_point.x*cos(pitch) + input_point.z*sin(pitch);
+    const double z = -input_point.x*sin(pitch) + input_point.z*cos(pitch);
+    output_point.set(x, z);
 }
 
 bool CollaborativeVSLAM::can_set_tf_for_map()
 {
-    const bool flag_leader_init   = leader_flag_init_visual_.data   and leader_flag_init_ratio_.data;
-    const bool flag_follower_init = follower_flag_init_visual_.data and follower_flag_init_ratio_.data;
+    return is_init_leader() and is_init_follower() and not follower_flag_get_tf_;
+}
 
-    return flag_leader_init and flag_follower_init and not follower_flag_get_tf_;
+bool CollaborativeVSLAM::is_init_leader()
+{
+    return leader_flag_init_visual_.data and leader_flag_init_ratio_.data;
+}
+
+bool CollaborativeVSLAM::is_init_follower()
+{
+    return follower_flag_init_visual_.data and follower_flag_init_ratio_.data;
 }
 
 void CollaborativeVSLAM::co_vslam()
@@ -208,17 +267,17 @@ void CollaborativeVSLAM::calc_leader_quat(geometry_msgs::Quaternion& leader_quat
     tf::quaternionTFToMsg(leader_quat, leader_quat_msg);
 }
 
-float CollaborativeVSLAM::getPitch(geometry_msgs::Quaternion& quat_msg)
+double CollaborativeVSLAM::getPitch(geometry_msgs::Quaternion& quat_msg)
 {
     double r, p, y;
     tf::Quaternion quat(quat_msg.x, quat_msg.y, quat_msg.z, quat_msg.w);
     tf::Matrix3x3(quat).getRPY(r, p, y);
 
-    return float(p);
+    return p;
 }
 
 // 適切な角度(-M_PI ~ M_PI)を返す
-float CollaborativeVSLAM::normalize_angle(float angle)
+double CollaborativeVSLAM::normalize_angle(double angle)
 {
     while(M_PI  < angle) angle -= 2.0*M_PI;
     while(angle < -M_PI) angle += 2.0*M_PI;
