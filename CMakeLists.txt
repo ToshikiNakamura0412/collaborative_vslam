@@ -39,6 +39,7 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 add_library(roomba_mask_creator     src/roomba_mask_creator.cpp)
 add_library(scale_ratio_initializer src/scale_ratio_initializer.cpp)
 add_library(collaborative_vslam     src/collaborative_vslam.cpp)
+add_library(point                   src/point.cpp)
 
 ## Declare a C++ executable
 add_executable(roomba_mask_creator_node     src/roomba_mask_creator_node.cpp)
@@ -51,6 +52,6 @@ add_dependencies(scale_ratio_initializer_node ${${PROJECT_NAME}_EXPORTED_TARGETS
 add_dependencies(collaborative_vslam_node     ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(roomba_mask_creator_node     roomba_mask_creator ${catkin_LIBRARIES})
-target_link_libraries(scale_ratio_initializer_node scale_ratio_initializer ${catkin_LIBRARIES})
-target_link_libraries(collaborative_vslam_node     collaborative_vslam ${catkin_LIBRARIES})
+target_link_libraries(roomba_mask_creator_node       roomba_mask_creator ${catkin_LIBRARIES})
+target_link_libraries(scale_ratio_initializer_node   scale_ratio_initializer ${catkin_LIBRARIES})
+target_link_libraries(collaborative_vslam_node point collaborative_vslam ${catkin_LIBRARIES})
