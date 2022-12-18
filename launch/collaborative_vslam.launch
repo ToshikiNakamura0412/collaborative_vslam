@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- roomba number -->
+    <arg name="leader"   default="roomba1"/>
+    <arg name="follower" default="roomba3"/>
+
+    <!-- launch node -->
+    <!-- <node pkg="collaborative_vslam" type="collaborative_vslam_node" name="co-vslam"> -->
+    <!--     &#60;&#33;&#45;&#45; topic name &#45;&#45;&#62; -->
+    <!--     &#60;&#33;&#45;&#45; sub &#45;&#45;&#62; -->
+    <!--     <remap from="/pose"       to="/orb_slam3/camera_pose"/> -->
+    <!--     <remap from="/wheel_odom" to="/$(arg roomba)/roomba/odometry"/> -->
+    <!--     &#60;&#33;&#45;&#45; pub &#45;&#45;&#62; -->
+    <!--     <remap from="/flag_init_visual" to="/$(arg roomba)/flag_init_visual"/> -->
+    <!--     <remap from="/scale_ratio" to="/$(arg roomba)/scale_ratio"/> -->
+    <!--  -->
+    <!--     &#60;&#33;&#45;&#45; parameter &#45;&#45;&#62; -->
+    <!--     <param name="/hz" value="15"/> -->
+    <!--     <param name="/move_dist_th" value="0.01"/> -->
+    <!--     <param name="/scale_ratio_th_percent" value="0.1"/> -->
+    <!--     <param name="/duration_init" value="1.0"/> -->
+    <!-- </node> -->
+
+    <group ns="leader">
+        <include file="$(find collaborative_vslam)/launch/initialize_map_scale_ratio.launch">
+            <arg name="roomba" default="$(arg leader)"/>
+        </include>
+    </group>
+    <group ns="follower">
+        <include file="$(find collaborative_vslam)/launch/initialize_map_scale_ratio.launch">
+            <arg name="roomba" default="$(arg follower)"/>
+        </include>
+    </group>
+</launch>
