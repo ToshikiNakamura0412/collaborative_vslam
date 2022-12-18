@@ -54,4 +54,4 @@ add_dependencies(collaborative_vslam_node     ${${PROJECT_NAME}_EXPORTED_TARGETS
 ## Specify libraries to link a library or executable target against
 target_link_libraries(roomba_mask_creator_node       roomba_mask_creator ${catkin_LIBRARIES})
 target_link_libraries(scale_ratio_initializer_node   scale_ratio_initializer ${catkin_LIBRARIES})
-target_link_libraries(collaborative_vslam_node point collaborative_vslam ${catkin_LIBRARIES})
+target_link_libraries(collaborative_vslam_node collaborative_vslam point ${catkin_LIBRARIES})
