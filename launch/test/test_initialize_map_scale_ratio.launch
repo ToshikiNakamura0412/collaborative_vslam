@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- roomba number -->
+    <arg name="roomba" default="roomba1"/>
+
+    <!-- launch node -->
+    <include file="$(find collaborative_vslam)/launch/initialize_map_scale_ratio.launch">
+        <arg name="roomba" default="$(arg roomba)"/>
+    </include>
+
+    <!-- debug -->
+    <include file="$(find orb_slam3_ros_wrapper)/launch/mono_roomba.launch">
+        <arg name="roomba" default="$(arg roomba)"/>
+    </include>
+</launch>

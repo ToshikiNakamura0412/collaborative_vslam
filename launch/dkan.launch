@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<launch>
+    <arg name="roomba" default="roomba1" />
+
+    <!-- YOLOv3 -->
+    <arg name="network_param_file" default="$(find darknet_ros)/config/dkan.yaml"/>
+    <arg name="image" default="$(arg roomba)/camera/color/image_rect_color" />
+
+    <!-- Include main launch file -->
+    <include file="$(find darknet_ros)/launch/roomba_darknet_ros.launch">
+        <arg name="network_param_file"  value="$(arg network_param_file)"/>
+        <arg name="image"               value="$(arg image)" />
+        <arg name="roomba"              value="$(arg roomba)" />
+     </include>
+
+</launch>

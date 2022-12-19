@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- roomba number -->
+    <arg name="leader"   default="roomba1"/>
+    <arg name="follower" default="roomba3"/>
+
+
+    <!-- launch node -->
+    <!-- for server -->
+    <include file="$(find collaborative_vslam)/launch/collaborative_vslam.launch">
+        <arg name="leader"   default="$(arg leader)"/>
+        <arg name="follower" default="$(arg follwer)"/>
+    </include>
+
+    <!-- for leader -->
+    <group ns="$(arg leader)">
+        <include file="$(find collaborative_vslam)/launch/single_vslam_mono.launch">
+            <arg name="roomba" default="$(arg leader)"/>
+        </include>
+        <include file="$(find collaborative_vslam)/launch/initialize_map_scale_ratio.launch">
+            <arg name="roomba" default="$(arg leader)"/>
+        </include>
+    </group>
+
+    <!-- for follower -->
+    <group ns="$(arg follower)">
+        <include file="$(find collaborative_vslam)/launch/single_vslam_mono.launch">
+            <arg name="roomba" default="$(arg follower)"/>
+            <arg name="image"  default="mask_image"/>
+        </include>
+        <include file="$(find collaborative_vslam)/launch/initialize_map_scale_ratio.launch">
+            <arg name="roomba" default="$(arg follower)"/>
+        </include>
+    </group>
+    <include file="$(find collaborative_vslam)/launch/creat_roomba_mask_image.launch">
+        <arg name="roomba" default="$(arg follower)"/>
+    </include>
+    <include file="$(find collaborative_vslam)/launch/yolo.launch">
+        <arg name="roomba" default="$(arg follower)"/>
+    </include>
+
+    <!-- Visualization - RViz-->
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find collaborative_vslam)/config/rviz/co-vslam.launch" output="screen"/>
+</launch>

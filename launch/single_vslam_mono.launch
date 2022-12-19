@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- roomba number -->
+    <arg name="roomba" default="roomba1"/>
+    <arg name="image"  default="camera/color/image_rect_color"/>
+
+    <!-- file path -->
+    <arg name="voc_file"      default="$(find orb_slam3_ros_wrapper)/config/ORBvoc.txt"/>
+    <arg name="settings_file" default="$(find orb_slam3_ros_wrapper)/config/RealSense_D435_mono.yaml"/>
+
+    <!-- ORB-SLAM3 -->
+    <!-- <node name="orb_slam3_mono" pkg="orb_slam3_ros_wrapper" type="orb_slam3_ros_wrapper_mono" output="screen"> -->
+    <node name="orb_slam3_mono" pkg="orb_slam3_ros_wrapper" type="orb_slam3_ros_wrapper_mono">
+        <!-- sub -->
+        <remap from="/camera/image_raw" to="/$(arg roomba)/$(arg image)"/>
+
+        <!-- Parameters for original ORB-SLAM3 -->
+        <param name="voc_file"      type="string" value="$(arg voc_file)"/>
+        <param name="settings_file" type="string" value="$(arg settings_file)"/>
+
+        <!-- Parameters for ROS -->
+        <param name="world_frame_id" type="string" value="world" />
+        <param name="cam_frame_id"   type="string" value="camera" />
+    </node>
+
+    <!-- <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="trajectory_server_orb_slam3" output="screen" ns="orb_slam3_ros" > -->
+    <!--     <param name="/target_frame_name" value="/world" /> -->
+    <!--     <param name="/source_frame_name" value="/camera" /> -->
+    <!--     <param name="/trajectory_update_rate" value="20.0" /> -->
+    <!--     <param name="/trajectory_publish_rate" value="20.0" /> -->
+    <!-- </node> -->
+</launch>
