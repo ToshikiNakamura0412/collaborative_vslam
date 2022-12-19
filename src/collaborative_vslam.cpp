@@ -164,9 +164,9 @@ void CollaborativeVSLAM::set_tf_for_map()
     ros::Publisher follower_map_origin_pub;
     follower_map_origin_pub = nh_.advertise<geometry_msgs::Point>("/follower/map_origin", 1);
     geometry_msgs::Point follower_map_origin;
-    follower_map_origin.x = follower_tf_to_leader_.x;
+    follower_map_origin.x = follower_tf_to_leader_.x();
     follower_map_origin.y = 0.0;
-    follower_map_origin.z = follower_tf_to_leader_.z;
+    follower_map_origin.z = follower_tf_to_leader_.z();
     follower_map_origin_pub.publish(follower_map_origin);
 }
 

@@ -12,9 +12,9 @@ ScaleRatioInitializer::ScaleRatioInitializer():private_nh_("~")
     wheel_dist_for_init_   = 0.0;
     visual_dist_for_init_  = 0.0;
     scale_ratio_.data      = 0.0;
-    flag_init_ratio_.data        = false;
-    flag_lost_             = false;
+    flag_init_ratio_.data  = false;
     flag_init_visual_.data = false;
+    flag_lost_             = false;
 
     // Subscriber
     pose_sub_       = nh_.subscribe("/pose", 1, &ScaleRatioInitializer::pose_callback, this);
@@ -22,7 +22,8 @@ ScaleRatioInitializer::ScaleRatioInitializer():private_nh_("~")
     lost_sign_sub_  = nh_.subscribe("/lost_sign", 1, &ScaleRatioInitializer::lost_sign_callback, this);
 
     // Publisher
-    init_visual_pub_ = nh_.advertise<std_msgs::Bool>("/init_sign", 1);
+    init_visual_pub_ = nh_.advertise<std_msgs::Bool>("/visual_sign", 1);
+    init_ratio_pub_  = nh_.advertise<std_msgs::Bool>("/ratio_sign", 1);
     ratio_pub_       = nh_.advertise<std_msgs::Float64>("/scale_ratio", 1);
 }
 
