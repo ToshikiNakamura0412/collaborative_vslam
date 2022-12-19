@@ -11,7 +11,8 @@
         <remap from="/pose"       to="/orb_slam3/camera_pose"/>
         <remap from="/wheel_odom" to="/$(arg roomba)/roomba/odometry"/>
         <!-- pub -->
-        <remap from="/flag_init_visual" to="/$(arg roomba)/flag_init_visual"/>
+        <remap from="/visual_sign" to="/$(arg roomba)/visual_sign"/>
+        <remap from="/ratio_sign"  to="/$(arg roomba)/ratio_sign"/>
         <remap from="/scale_ratio" to="/$(arg roomba)/scale_ratio"/>
 
         <!-- parameter -->
@@ -20,8 +21,4 @@
         <param name="/scale_ratio_th_percent" value="0.1"/>
         <param name="/duration_init" value="1.0"/>
     </node>
-
-    <include file="$(find orb_slam3_ros_wrapper)/launch/mono_roomba.launch">
-        <arg name="roomba" default="$(arg roomba)"/>
-    </include>
 </launch>

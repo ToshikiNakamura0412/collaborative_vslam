@@ -37,6 +37,4 @@
             <remap from="depth_registered/points" to="$(arg roomba)/camera/depth_registered/points" />
         </node>
     </group>
-
-
 </launch>
