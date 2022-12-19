@@ -5,7 +5,7 @@ CollaborativeVSLAM::CollaborativeVSLAM():private_nh_("~")
     // ===== Parameter Server =====
     // for collaborative system
     private_nh_.getParam("hz", hz_);
-    private_nh_.param<std::string>("map_frame_id", map_frame_id_, "map");
+    private_nh_.param<std::string>("map_frame_id", map_frame_id_, "world");
     // for leader robot
     // for follower robot
 
@@ -42,12 +42,14 @@ CollaborativeVSLAM::CollaborativeVSLAM():private_nh_("~")
     follower_relative_pos_sub_     = nh_.subscribe("/follower/relative_position", 1, &CollaborativeVSLAM::follower_relative_pos_callback, this);
 
     // ===== Publisher =====
-    leader_pose_pub_   = nh_.advertise<geometry_msgs::PoseStamped>("/leader/collaborative_pose", 1);
-    leader_map_pub_    = nh_.advertise<sensor_msgs::PointCloud2>("/leader/collaborative_map", 1);
-    follower_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/follower/collaborative_pose", 1);
+    leader_pose_pub_         = nh_.advertise<geometry_msgs::PoseStamped>("/leader/collaborative_pose", 1);
+    leader_map_pub_          = nh_.advertise<sensor_msgs::PointCloud2>("/leader/collaborative_map", 1);
+    follower_pose_pub_       = nh_.advertise<geometry_msgs::PoseStamped>("/follower/collaborative_pose", 1);
+    follower_map_origin_pub_ = nh_.advertise<geometry_msgs::PointStamped>("/follower/map_origin", 1);
 
     // frame idの設定
     leader_pose_.header.frame_id = map_frame_id_;
+    follower_map_origin_.header.frame_id = map_frame_id_;
 }
 
 
@@ -83,11 +85,13 @@ void CollaborativeVSLAM::leader_active_map_callback(const sensor_msgs::PointClou
 void CollaborativeVSLAM::leader_init_visual_sign_callback(const std_msgs::Bool::ConstPtr& msg)
 {
     leader_flag_init_visual_ = *msg;
+    if(leader_flag_init_visual_.data) ROS_INFO_STREAM("leader start tracking!!");
 }
 
 void CollaborativeVSLAM::leader_init_ratio_sign_callback(const std_msgs::Bool::ConstPtr& msg)
 {
     leader_flag_init_ratio_ = *msg;
+    if(leader_flag_init_ratio_.data) ROS_INFO_STREAM("leader initialized scale ratio!!");
 }
 
 void CollaborativeVSLAM::leader_lost_sign_callback(const std_msgs::Bool::ConstPtr& msg)
@@ -119,11 +123,13 @@ void CollaborativeVSLAM::follower_scale_ratio_callback(const std_msgs::Float64::
 void CollaborativeVSLAM::follower_init_visual_sign_callback(const std_msgs::Bool::ConstPtr& msg)
 {
     follower_flag_init_visual_ = *msg;
+    if(follower_flag_init_visual_.data) ROS_INFO_STREAM("follower start tracking!!");
 }
 
 void CollaborativeVSLAM::follower_init_ratio_sign_callback(const std_msgs::Bool::ConstPtr& msg)
 {
     follower_flag_init_ratio_ = *msg;
+    if(follower_flag_init_ratio_.data) ROS_INFO_STREAM("follower initialized scale ratio!!");
 }
 
 void CollaborativeVSLAM::follower_lost_sign_callback(const std_msgs::Bool::ConstPtr& msg)
@@ -144,6 +150,8 @@ void CollaborativeVSLAM::follower_relative_pos_callback(const object_detector_ms
 
     if(can_set_tf_for_map())
         set_tf_for_map();
+    if(follower_flag_get_tf_)
+        follower_map_origin_pub_.publish(follower_map_origin_);
 }
 
 void CollaborativeVSLAM::set_tf_for_map()
@@ -160,14 +168,10 @@ void CollaborativeVSLAM::set_tf_for_map()
 
     follower_flag_get_tf_ = true;
 
-    // debug
-    ros::Publisher follower_map_origin_pub;
-    follower_map_origin_pub = nh_.advertise<geometry_msgs::Point>("/follower/map_origin", 1);
-    geometry_msgs::Point follower_map_origin;
-    follower_map_origin.x = follower_tf_to_leader_.x();
-    follower_map_origin.y = 0.0;
-    follower_map_origin.z = follower_tf_to_leader_.z();
-    follower_map_origin_pub.publish(follower_map_origin);
+    follower_map_origin_.point.x = follower_tf_to_leader_.x();
+    follower_map_origin_.point.y = 0.0;
+    follower_map_origin_.point.z = follower_tf_to_leader_.z();
+    ROS_INFO_STREAM("Got follower map origin!!");
 }
 
 Point CollaborativeVSLAM::adjust_follower_scale_to_leader(const Point point)
@@ -287,12 +291,11 @@ double CollaborativeVSLAM::normalize_angle(double angle)
 
 void CollaborativeVSLAM::co_mapping()
 {
-    if(!leader_flag_lost_.data)
+    if(leader_flag_lost_.data)
     {
-
+        leader_map_pub_.publish(leader_co_map_);
     }
     else
     {
-        leader_map_pub_.publish(leader_co_map_);
     }
 }

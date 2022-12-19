@@ -7,6 +7,7 @@
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/Point.h>
 #include <tf/transform_broadcaster.h>
 
@@ -113,6 +114,7 @@ private:
     ros::Publisher leader_pose_pub_;
     ros::Publisher leader_map_pub_;
     ros::Publisher follower_pose_pub_;
+    ros::Publisher follower_map_origin_pub_;
 
     // leader info
     geometry_msgs::PoseStamped            leader_pose_;
@@ -122,6 +124,7 @@ private:
     // follower info
     geometry_msgs::PoseStamped            follower_pose_;
     object_detector_msgs::ObjectPosition  follower_relative_pos_;
+    geometry_msgs::PointStamped           follower_map_origin_;
     // collaborative leader info
     // sensor_msgs::PointCloud2              leader_co_pose_;
     sensor_msgs::PointCloud2              leader_co_map_;
