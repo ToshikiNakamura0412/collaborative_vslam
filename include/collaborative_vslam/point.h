@@ -18,6 +18,7 @@ public:
     Point operator /(const Point& point) const; // 算術演算子/
     friend Point operator *(const Point& point, const double a); // 算術演算子*
     friend Point operator /(const Point& point, const double a); // 算術演算子/
+    friend std::ostream& operator<<(std::ostream& os, const Point& point);
 
     // accessor
     void set(const double x, const double z);

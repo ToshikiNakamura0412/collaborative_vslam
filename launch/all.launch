@@ -9,7 +9,7 @@
     <!-- for server -->
     <include file="$(find collaborative_vslam)/launch/collaborative_vslam.launch">
         <arg name="leader"   default="$(arg leader)"/>
-        <arg name="follower" default="$(arg follwer)"/>
+        <arg name="follower" default="$(arg follower)"/>
     </include>
 
     <!-- for leader -->
@@ -17,10 +17,13 @@
         <include file="$(find collaborative_vslam)/launch/single_vslam_mono.launch">
             <arg name="roomba" default="$(arg leader)"/>
         </include>
-        <include file="$(find collaborative_vslam)/launch/initialize_map_scale_ratio.launch">
-            <arg name="roomba" default="$(arg leader)"/>
-        </include>
     </group>
+    <include file="$(find collaborative_vslam)/launch/initialize_map_scale_ratio.launch">
+        <arg name="roomba" default="$(arg leader)"/>
+    </include>
+    <include file="$(find collaborative_vslam)/launch/unzipping.launch">
+        <arg name="roomba" default="$(arg leader)"/>
+    </include>
 
     <!-- for follower -->
     <group ns="$(arg follower)">
@@ -28,17 +31,23 @@
             <arg name="roomba" default="$(arg follower)"/>
             <arg name="image"  default="mask_image"/>
         </include>
-        <include file="$(find collaborative_vslam)/launch/initialize_map_scale_ratio.launch">
-            <arg name="roomba" default="$(arg follower)"/>
-        </include>
     </group>
+    <include file="$(find collaborative_vslam)/launch/initialize_map_scale_ratio.launch">
+        <arg name="roomba" default="$(arg follower)"/>
+    </include>
     <include file="$(find collaborative_vslam)/launch/creat_roomba_mask_image.launch">
+        <arg name="roomba" default="$(arg follower)"/>
+    </include>
+    <include file="$(find collaborative_vslam)/launch/unzipping.launch">
         <arg name="roomba" default="$(arg follower)"/>
     </include>
     <include file="$(find collaborative_vslam)/launch/yolo.launch">
         <arg name="roomba" default="$(arg follower)"/>
     </include>
+    <include file="$(find collaborative_vslam)/launch/get_relative_position.launch">
+        <arg name="roomba" default="$(arg follower)"/>
+    </include>
 
     <!-- Visualization - RViz-->
-    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find collaborative_vslam)/config/rviz/co-vslam.launch" output="screen"/>
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find collaborative_vslam)/config/rviz/co-vslam.rviz" output="screen"/>
 </launch>

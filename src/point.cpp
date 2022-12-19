@@ -85,6 +85,14 @@ Point operator /(const Point& point, const double a) // friend
     tmp.z_ = point.z_ / a;
     return tmp;
 }
+std::ostream& operator<<(std::ostream& os, const Point& point)
+{
+    return os << "point:" << std::endl
+        << "  x: " << point.x_ << std::endl
+        << "  z: " << point.z_ << std::endl
+        << "---" << std::endl;
+}
+
 
 // setter
 void Point::set(const double x, const double z)

@@ -10,7 +10,7 @@
 
     <!-- ORB-SLAM3 -->
     <!-- <node name="orb_slam3_mono" pkg="orb_slam3_ros_wrapper" type="orb_slam3_ros_wrapper_mono" output="screen"> -->
-    <node name="orb_slam3_mono" pkg="orb_slam3_ros_wrapper" type="orb_slam3_ros_wrapper_mono">
+    <node pkg="orb_slam3_ros_wrapper" type="orb_slam3_ros_wrapper_mono" name="$(arg roomba)_vslam_mono">
         <!-- sub -->
         <remap from="/camera/image_raw" to="/$(arg roomba)/$(arg image)"/>
 

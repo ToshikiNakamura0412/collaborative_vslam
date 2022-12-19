@@ -9,7 +9,12 @@
     </include>
 
     <!-- debug -->
-    <include file="$(find orb_slam3_ros_wrapper)/launch/mono_roomba.launch">
+    <group ns="$(arg roomba)">
+        <include file="$(find collaborative_vslam)/launch/single_vslam_mono.launch">
+            <arg name="roomba" default="$(arg roomba)"/>
+        </include>
+    </group>
+    <include file="$(find collaborative_vslam)/launch/unzipping.launch">
         <arg name="roomba" default="$(arg roomba)"/>
     </include>
 </launch>

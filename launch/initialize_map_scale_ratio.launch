@@ -4,11 +4,11 @@
     <arg name="roomba" default="roomba1"/>
 
     <!-- launch node -->
-    <!-- <node pkg="collaborative_vslam" type="scale_ratio_initializer_node" name="init_ratio" output="screen"> -->
-    <node pkg="collaborative_vslam" type="scale_ratio_initializer_node" name="init_ratio">
+    <!-- <node pkg="collaborative_vslam" type="scale_ratio_initializer_node" name="$(arg roomba)_init_ratio" output="screen"> -->
+    <node pkg="collaborative_vslam" type="scale_ratio_initializer_node" name="$(arg roomba)_init_ratio">
         <!-- topic name -->
         <!-- sub -->
-        <remap from="/pose"       to="/orb_slam3/camera_pose"/>
+        <remap from="/pose"       to="/$(arg roomba)/orb_slam3/camera_pose"/>
         <remap from="/wheel_odom" to="/$(arg roomba)/roomba/odometry"/>
         <!-- pub -->
         <remap from="/visual_sign" to="/$(arg roomba)/visual_sign"/>
