@@ -78,8 +78,8 @@ void ScaleRatioInitializer::init_scale_ratio()
     const double elapsed_time = ros::Time::now().toSec() - init_begin_.toSec();
     if(elapsed_time < duration_init_) // 移動量を加算
     {
-        wheel_dist_for_init_  += calc_hypot(last_pose_.pose.position, prev_pose_.pose.position);
-        visual_dist_for_init_ += calc_hypot(last_odom_.pose.pose.position, prev_odom_.pose.pose.position);
+        visual_dist_for_init_ += calc_hypot(last_pose_.pose.position, prev_pose_.pose.position);
+        wheel_dist_for_init_  += calc_hypot(last_odom_.pose.pose.position, prev_odom_.pose.pose.position);
     }
     else // スケール比を計算
     {
