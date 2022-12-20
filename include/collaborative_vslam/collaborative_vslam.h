@@ -52,6 +52,7 @@ private:
     void  calc_leader_pos(double& leader_x, double& leader_z);
     void  calc_leader_quat(geometry_msgs::Quaternion& leader_quat_msg);
     void  tf_follow_pose();
+    void  pub_follower_pose_in_leader_map();
     void  broadcast_leader_state();
     void  rotate_pitch(const object_detector_msgs::ObjectPosition& input_point, const double pitch, Point& output_point);
     void  rotate_pitch(const geometry_msgs::Point& input_point, const double pitch, Point& output_point);
@@ -125,8 +126,6 @@ private:
     geometry_msgs::PoseStamped            follower_pose_;
     object_detector_msgs::ObjectPosition  follower_relative_pos_;
     geometry_msgs::PointStamped           follower_map_origin_;
-    // collaborative leader info
-    // sensor_msgs::PointCloud2              leader_co_pose_;
     sensor_msgs::PointCloud2              leader_co_map_;
 };
 

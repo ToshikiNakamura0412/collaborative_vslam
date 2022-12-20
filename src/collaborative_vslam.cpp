@@ -113,6 +113,20 @@ void CollaborativeVSLAM::leader_relative_angle_callback(const color_detector_msg
 void CollaborativeVSLAM::follower_pose_callback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
     follower_pose_ = *msg;
+    pub_follower_pose_in_leader_map();
+}
+
+void CollaborativeVSLAM::pub_follower_pose_in_leader_map()
+{
+    if(!follower_flag_get_tf_) return;
+
+    const Point follower_pos(follower_pose_.pose.position);
+    const Point follower_map_origin(follower_map_origin_);
+    Point follower_pose_in_leader_map = follower_map_origin + adjust_follower_scale_to_leader(follower_pos);
+
+    follower_pose_in_leader_map.output(follower_pose_);
+    follower_pose_pub_.publish(follower_pose_);
+    ROS_INFO_STREAM("Convert follower pose scale!!");
 }
 
 void CollaborativeVSLAM::follower_scale_ratio_callback(const std_msgs::Float64::ConstPtr& msg)
