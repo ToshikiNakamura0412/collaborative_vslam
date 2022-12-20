@@ -18,7 +18,8 @@
         <!-- parameter -->
         <param name="/hz" value="15"/>
         <param name="/move_dist_th" value="0.01"/>
-        <param name="/scale_ratio_th_percent" value="0.1"/>
+        <!-- <param name="/scale_ratio_th_percent" value="0.1"/> -->
+        <param name="/scale_ratio_th_percent" value="0.2"/>
         <param name="/duration_init" value="1.0"/>
     </node>
 </launch>
