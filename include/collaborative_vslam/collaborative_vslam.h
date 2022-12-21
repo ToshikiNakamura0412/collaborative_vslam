@@ -49,13 +49,14 @@ private:
     void  co_localize();
     void  co_mapping();
     void  calc_leader_pose();
-    void  calc_leader_pos(double& leader_x, double& leader_z);
+    void  calc_follower_pose_in_leader_map();
+    void  calc_leader_pos();
     void  calc_leader_quat(geometry_msgs::Quaternion& leader_quat_msg);
+
     void  tf_follow_pose();
-    void  pub_follower_pose_in_leader_map();
+    void  pub_leader_pose_from_follower();
     void  broadcast_leader_state();
-    void  rotate_pitch(const object_detector_msgs::ObjectPosition& input_point, const double pitch, Point& output_point);
-    void  rotate_pitch(const geometry_msgs::Point& input_point, const double pitch, Point& output_point);
+    Point rotate_pitch(const object_detector_msgs::ObjectPosition& input_point, const double pitch);
     Point adjust_follower_scale_to_leader(const Point point);
     Point adjust_leader_scale_to_follower(const Point point);
     Point adjust_scale_to_leader(const Point point);
@@ -88,7 +89,6 @@ private:
     std_msgs::Bool follower_flag_init_ratio_;
     std_msgs::Bool follower_flag_lost_;
     std_msgs::Bool follower_flag_map_merge_;
-    Point follower_tf_to_leader_;
 
     // NodeHandle
     ros::NodeHandle nh_;
@@ -113,12 +113,14 @@ private:
 
     // Publisher
     ros::Publisher leader_pose_pub_;
+    ros::Publisher leader_pose_from_follower_pub_;
     ros::Publisher leader_map_pub_;
     ros::Publisher follower_pose_pub_;
     ros::Publisher follower_map_origin_pub_;
 
     // leader info
     geometry_msgs::PoseStamped            leader_pose_;
+    geometry_msgs::PoseStamped            leader_pose_from_follower_;
     sensor_msgs::PointCloud2              leader_active_map_;
     std::vector<sensor_msgs::PointCloud2> leader_all_map_;
     color_detector_msgs::TargetAngle      leader_relative_angle_;

@@ -42,17 +42,20 @@ CollaborativeVSLAM::CollaborativeVSLAM():private_nh_("~")
     follower_relative_pos_sub_     = nh_.subscribe("/follower/relative_position", 1, &CollaborativeVSLAM::follower_relative_pos_callback, this);
 
     // ===== Publisher =====
-    leader_pose_pub_         = nh_.advertise<geometry_msgs::PoseStamped>("/leader/collaborative_pose", 1);
-    leader_map_pub_          = nh_.advertise<sensor_msgs::PointCloud2>("/leader/collaborative_map", 1);
-    follower_pose_pub_       = nh_.advertise<geometry_msgs::PoseStamped>("/follower/collaborative_pose", 1);
-    follower_map_origin_pub_ = nh_.advertise<geometry_msgs::PointStamped>("/follower/map_origin", 1);
+    // for leader robot
+    leader_pose_pub_               = nh_.advertise<geometry_msgs::PoseStamped>("/leader/collaborative_pose", 1);
+    leader_pose_from_follower_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/leader/pose_from_follower", 1);
+    leader_map_pub_                = nh_.advertise<sensor_msgs::PointCloud2>("/leader/collaborative_map", 1);
+    // for follower robot
+    follower_pose_pub_             = nh_.advertise<geometry_msgs::PoseStamped>("/follower/collaborative_pose", 1);
+    follower_map_origin_pub_       = nh_.advertise<geometry_msgs::PointStamped>("/follower/map_origin", 1);
 
     // frame idの設定
-    leader_pose_.header.frame_id = map_frame_id_;
-    follower_map_origin_.header.frame_id = map_frame_id_;
+    leader_pose_from_follower_.header.frame_id = map_frame_id_;
+    follower_map_origin_.header.frame_id       = map_frame_id_;
 }
 
-
+// main process
 void CollaborativeVSLAM::process()
 {
     ros::Rate loop_rate(hz_);
@@ -113,20 +116,6 @@ void CollaborativeVSLAM::leader_relative_angle_callback(const color_detector_msg
 void CollaborativeVSLAM::follower_pose_callback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
     follower_pose_ = *msg;
-    pub_follower_pose_in_leader_map();
-}
-
-void CollaborativeVSLAM::pub_follower_pose_in_leader_map()
-{
-    if(!follower_flag_get_tf_) return;
-
-    const Point follower_pos(follower_pose_.pose.position);
-    const Point follower_map_origin(follower_map_origin_);
-    Point follower_pose_in_leader_map = follower_map_origin + adjust_follower_scale_to_leader(follower_pos);
-
-    follower_pose_in_leader_map.output(follower_pose_);
-    follower_pose_pub_.publish(follower_pose_);
-    ROS_INFO_STREAM("Convert follower pose scale!!");
 }
 
 void CollaborativeVSLAM::follower_scale_ratio_callback(const std_msgs::Float64::ConstPtr& msg)
@@ -161,31 +150,56 @@ void CollaborativeVSLAM::follower_relative_pos_callback(const object_detector_ms
     for(const auto& obj : msg->object_position)
         if(obj.Class == "roomba")
             follower_relative_pos_ = obj;
+}
 
+void CollaborativeVSLAM::co_vslam()
+{
     if(can_set_tf_for_map())
         set_tf_for_map();
     if(follower_flag_get_tf_)
         follower_map_origin_pub_.publish(follower_map_origin_);
+
+    co_localize();
+    co_mapping();
+}
+
+bool CollaborativeVSLAM::can_set_tf_for_map()
+{
+    return is_init_leader() and is_init_follower() and not follower_flag_get_tf_;
+}
+
+bool CollaborativeVSLAM::is_init_leader()
+{
+    return leader_flag_init_visual_.data and leader_flag_init_ratio_.data;
+}
+
+bool CollaborativeVSLAM::is_init_follower()
+{
+    return follower_flag_init_visual_.data and follower_flag_init_ratio_.data;
 }
 
 void CollaborativeVSLAM::set_tf_for_map()
 {
-    const Point leader_pos(leader_pose_.pose.position);
-    const Point follower_pos(follower_pose_.pose.position);
+    const Point  leader_pos(leader_pose_.pose.position);
     const double follower_pitch = getPitch(follower_pose_.pose.orientation);
-    Point relative_pos;
+    const Point  relative_pos = rotate_pitch(follower_relative_pos_, follower_pitch);
+    const Point  follower_pos(follower_pose_.pose.position);
 
-    rotate_pitch(follower_relative_pos_, follower_pitch, relative_pos); // 回転
-
-    follower_tf_to_leader_ =
+    Point follower_tf_to_leader =
         leader_pos - adjust_scale_to_leader(relative_pos) - adjust_follower_scale_to_leader(follower_pos);
 
+    follower_tf_to_leader.output_xz(follower_map_origin_);
     follower_flag_get_tf_ = true;
+    ROS_INFO_STREAM("Set follower map origin!!");
+}
 
-    follower_map_origin_.point.x = follower_tf_to_leader_.x();
-    follower_map_origin_.point.y = 0.0;
-    follower_map_origin_.point.z = follower_tf_to_leader_.z();
-    ROS_INFO_STREAM("Got follower map origin!!");
+double CollaborativeVSLAM::getPitch(geometry_msgs::Quaternion& quat_msg)
+{
+    double r, p, y;
+    tf::Quaternion quat(quat_msg.x, quat_msg.y, quat_msg.z, quat_msg.w);
+    tf::Matrix3x3(quat).getRPY(r, p, y);
+
+    return p;
 }
 
 Point CollaborativeVSLAM::adjust_follower_scale_to_leader(const Point point)
@@ -208,90 +222,65 @@ Point CollaborativeVSLAM::adjust_scale_to_follower(const Point point)
     return point * follower_scale_ratio_;
 }
 
-void CollaborativeVSLAM::rotate_pitch(const object_detector_msgs::ObjectPosition& input_point, const double pitch, Point& output_point)
+Point CollaborativeVSLAM::rotate_pitch(const object_detector_msgs::ObjectPosition& input_point, const double pitch)
 {
     const double x =  input_point.x*cos(pitch) + input_point.z*sin(pitch);
     const double z = -input_point.x*sin(pitch) + input_point.z*cos(pitch);
-    output_point.set(x, z);
-}
-void CollaborativeVSLAM::rotate_pitch(const geometry_msgs::Point& input_point, const double pitch, Point& output_point)
-{
-    const double x =  input_point.x*cos(pitch) + input_point.z*sin(pitch);
-    const double z = -input_point.x*sin(pitch) + input_point.z*cos(pitch);
-    output_point.set(x, z);
-}
-
-bool CollaborativeVSLAM::can_set_tf_for_map()
-{
-    return is_init_leader() and is_init_follower() and not follower_flag_get_tf_;
-}
-
-bool CollaborativeVSLAM::is_init_leader()
-{
-    return leader_flag_init_visual_.data and leader_flag_init_ratio_.data;
-}
-
-bool CollaborativeVSLAM::is_init_follower()
-{
-    return follower_flag_init_visual_.data and follower_flag_init_ratio_.data;
-}
-
-void CollaborativeVSLAM::co_vslam()
-{
-    co_localize();
-    co_mapping();
+    return Point(x, z);
 }
 
 void CollaborativeVSLAM::co_localize()
 {
-    if(leader_flag_lost_.data)
-    {
-        calc_leader_pose();
-    }
+    // if(leader_flag_lost_.data)
+    calc_leader_pose();
 
+    // pub
     leader_pose_pub_.publish(leader_pose_);
 }
 
 void CollaborativeVSLAM::calc_leader_pose()
 {
-    calc_leader_pos(leader_pose_.pose.position.x, leader_pose_.pose.position.z);
-    calc_leader_quat(leader_pose_.pose.orientation);
+    if(!follower_flag_get_tf_) return;
+
+    calc_follower_pose_in_leader_map();
+    follower_pose_pub_.publish(follower_pose_);
+
+    calc_leader_pos();
+    // calc_leader_quat(leader_pose_from_follower_.pose.orientation);
+    leader_pose_from_follower_pub_.publish(leader_pose_from_follower_);
 }
 
-void CollaborativeVSLAM::calc_leader_pos(double& leader_x, double& leader_z)
+void CollaborativeVSLAM::calc_follower_pose_in_leader_map()
 {
-    const double follower_x     = follower_pose_.pose.position.x;
-    const double follower_z     = follower_pose_.pose.position.z;
+    const Point follower_map_origin(follower_map_origin_);
+    const Point follower_pos(follower_pose_.pose.position);
+
+    Point follower_pose_in_leader_map = follower_map_origin + adjust_follower_scale_to_leader(follower_pos);
+    follower_pose_in_leader_map.output(follower_pose_);
+}
+
+void CollaborativeVSLAM::calc_leader_pos()
+{
+    const Point  follower_pos(follower_pose_.pose.position);
     const double follower_pitch = getPitch(follower_pose_.pose.orientation);
+    const Point  relative_pos = rotate_pitch(follower_relative_pos_, follower_pitch);
 
-    const double leader_x_from_follower = follower_relative_pos_.x;
-    const double leader_z_from_follower = follower_relative_pos_.z;
-
-    leader_x = follower_x + leader_x_from_follower * cos(follower_pitch) + leader_z_from_follower * sin(follower_pitch);
-    leader_z = follower_z - leader_x_from_follower * sin(follower_pitch) + leader_z_from_follower * cos(follower_pitch);
+    Point leader_pos = follower_pos + adjust_scale_to_leader(relative_pos);
+    leader_pos.output(leader_pose_from_follower_);
 }
 
 void CollaborativeVSLAM::calc_leader_quat(geometry_msgs::Quaternion& leader_quat_msg)
 {
-    const float follower_pitch = getPitch(follower_pose_.pose.orientation);
-    const float follower_x     = follower_pose_.pose.position.x;
-    const float follower_z     = follower_pose_.pose.position.z;
-    float leader_pitch   = -M_PI + follower_pitch + atan2(follower_x, follower_z) + leader_relative_angle_.radian;
+    const double follower_pitch = getPitch(follower_pose_.pose.orientation);
+    const double follower_x     = follower_pose_.pose.position.x;
+    const double follower_z     = follower_pose_.pose.position.z;
+    double leader_pitch   = -M_PI + follower_pitch + atan2(follower_x, follower_z) + leader_relative_angle_.radian;
     leader_pitch = normalize_angle(leader_pitch);
 
     // pitchからquaternionを算出
     tf::Quaternion leader_quat;
     leader_quat.setRPY(0, leader_pitch, 0);
     tf::quaternionTFToMsg(leader_quat, leader_quat_msg);
-}
-
-double CollaborativeVSLAM::getPitch(geometry_msgs::Quaternion& quat_msg)
-{
-    double r, p, y;
-    tf::Quaternion quat(quat_msg.x, quat_msg.y, quat_msg.z, quat_msg.w);
-    tf::Matrix3x3(quat).getRPY(r, p, y);
-
-    return p;
 }
 
 // 適切な角度(-M_PI ~ M_PI)を返す

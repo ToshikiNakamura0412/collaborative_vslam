@@ -150,3 +150,9 @@ void Point::output(geometry_msgs::PointStamped& point)
     point.point.y = y_;
     point.point.z = z_;
 }
+void Point::output_xz(geometry_msgs::PointStamped& point)
+{
+    point.point.x = x_;
+    point.point.y = 0.0;
+    point.point.z = z_;
+}

@@ -35,6 +35,7 @@ public:
     void set(const geometry_msgs::Point& point);
     void output(geometry_msgs::PoseStamped& pose);
     void output(geometry_msgs::PointStamped& point);
+    void output_xz(geometry_msgs::PointStamped& point);
     double x() const { return x_; }
     double y() const { return y_; }
     double z() const { return z_; }

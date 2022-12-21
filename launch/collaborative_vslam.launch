@@ -18,9 +18,14 @@
         <remap from="/follower/ratio_sign"        to="$(arg follower)/ratio_sign"/>
         <remap from="/follower/scale_ratio"       to="$(arg follower)/scale_ratio"/>
         <remap from="/follower/relative_position" to="$(arg follower)/object_positions"/>
+
         <!-- pub -->
-        <remap from="/follower/map_origin"         to="/$(arg follower)/map_origin"/>
+        <!-- for leader -->
+        <remap from="/leader/collaborative_pose" to="/$(arg leader)/collaborative_pose"/>
+        <remap from="/leader/pose_from_follower" to="/$(arg leader)/pose_from_follower"/>
+        <!-- for follower -->
         <remap from="/follower/collaborative_pose" to="/$(arg follower)/collaborative_pose"/>
+        <remap from="/follower/map_origin"         to="/$(arg follower)/map_origin"/>
 
         <!-- parameter -->
         <param name="/hz" value="15"/>
