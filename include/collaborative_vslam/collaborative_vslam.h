@@ -13,6 +13,7 @@
 
 // custom msg
 #include <color_detector_msgs/TargetAngle.h>
+#include <color_detector_msgs/TargetAngleList.h>
 #include <object_detector_msgs/ObjectPosition.h>
 #include <object_detector_msgs/ObjectPositions.h>
 
@@ -35,7 +36,7 @@ private:
     void leader_init_ratio_sign_callback(const std_msgs::Bool::ConstPtr& msg);
     void leader_lost_sign_callback(const std_msgs::Bool::ConstPtr& msg);
     void leader_map_merge_sign_callback(const std_msgs::Bool::ConstPtr& msg);
-    void leader_relative_angle_callback(const color_detector_msgs::TargetAngle::ConstPtr& msg);
+    void leader_relative_angle_callback(const color_detector_msgs::TargetAngleList::ConstPtr& msg);
     // for leader robot
     void follower_pose_callback(const geometry_msgs::PoseStamped::ConstPtr& msg);
     void follower_scale_ratio_callback(const std_msgs::Float64::ConstPtr& msg);
@@ -126,6 +127,7 @@ private:
     color_detector_msgs::TargetAngle      leader_relative_angle_;
     // follower info
     geometry_msgs::PoseStamped            follower_pose_;
+    geometry_msgs::PoseStamped            follower_pose_in_leader_map_;
     object_detector_msgs::ObjectPosition  follower_relative_pos_;
     geometry_msgs::PointStamped           follower_map_origin_;
     sensor_msgs::PointCloud2              leader_co_map_;

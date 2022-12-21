@@ -47,8 +47,8 @@ CollaborativeVSLAM::CollaborativeVSLAM():private_nh_("~")
     leader_pose_from_follower_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/leader/pose_from_follower", 1);
     leader_map_pub_                = nh_.advertise<sensor_msgs::PointCloud2>("/leader/collaborative_map", 1);
     // for follower robot
-    follower_pose_pub_             = nh_.advertise<geometry_msgs::PoseStamped>("/follower/collaborative_pose", 1);
-    follower_map_origin_pub_       = nh_.advertise<geometry_msgs::PointStamped>("/follower/map_origin", 1);
+    follower_pose_pub_       = nh_.advertise<geometry_msgs::PoseStamped>("/follower/collaborative_pose", 1);
+    follower_map_origin_pub_ = nh_.advertise<geometry_msgs::PointStamped>("/follower/map_origin", 1);
 
     // frame idの設定
     leader_pose_from_follower_.header.frame_id = map_frame_id_;
@@ -67,7 +67,6 @@ void CollaborativeVSLAM::process()
         loop_rate.sleep();
     }
 }
-
 
 // callback function for leader robot
 void CollaborativeVSLAM::leader_pose_callback(const geometry_msgs::PoseStamped::ConstPtr& msg)
@@ -107,9 +106,11 @@ void CollaborativeVSLAM::leader_map_merge_sign_callback(const std_msgs::Bool::Co
     leader_flag_map_merge_ = *msg;
 }
 
-void CollaborativeVSLAM::leader_relative_angle_callback(const color_detector_msgs::TargetAngle::ConstPtr& msg)
+void CollaborativeVSLAM::leader_relative_angle_callback(const color_detector_msgs::TargetAngleList::ConstPtr& msg)
 {
-    leader_relative_angle_ = *msg;
+    for(const auto& angle : msg->data)
+        if(angle.color == "blue")
+            leader_relative_angle_ = angle;
 }
 
 // callback function for follower robot
@@ -243,10 +244,10 @@ void CollaborativeVSLAM::calc_leader_pose()
     if(!follower_flag_get_tf_) return;
 
     calc_follower_pose_in_leader_map();
-    follower_pose_pub_.publish(follower_pose_);
+    follower_pose_pub_.publish(follower_pose_in_leader_map_);
 
     calc_leader_pos();
-    // calc_leader_quat(leader_pose_from_follower_.pose.orientation);
+    calc_leader_quat(leader_pose_from_follower_.pose.orientation);
     leader_pose_from_follower_pub_.publish(leader_pose_from_follower_);
 }
 
@@ -256,12 +257,12 @@ void CollaborativeVSLAM::calc_follower_pose_in_leader_map()
     const Point follower_pos(follower_pose_.pose.position);
 
     Point follower_pose_in_leader_map = follower_map_origin + adjust_follower_scale_to_leader(follower_pos);
-    follower_pose_in_leader_map.output(follower_pose_);
+    follower_pose_in_leader_map.output(follower_pose_in_leader_map_);
 }
 
 void CollaborativeVSLAM::calc_leader_pos()
 {
-    const Point  follower_pos(follower_pose_.pose.position);
+    const Point  follower_pos(follower_pose_in_leader_map_.pose.position);
     const double follower_pitch = getPitch(follower_pose_.pose.orientation);
     const Point  relative_pos = rotate_pitch(follower_relative_pos_, follower_pitch);
 
@@ -294,11 +295,7 @@ double CollaborativeVSLAM::normalize_angle(double angle)
 
 void CollaborativeVSLAM::co_mapping()
 {
-    if(leader_flag_lost_.data)
-    {
-        leader_map_pub_.publish(leader_co_map_);
-    }
-    else
-    {
-    }
+    leader_co_map_ = leader_active_map_;
+    // if(leader_flag_lost_.data)
+    leader_map_pub_.publish(leader_co_map_);
 }

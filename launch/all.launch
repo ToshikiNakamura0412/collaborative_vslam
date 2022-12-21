@@ -24,6 +24,9 @@
     <include file="$(find collaborative_vslam)/launch/unzipping.launch">
         <arg name="roomba" default="$(arg leader)"/>
     </include>
+    <include file="$(find collaborative_vslam)/launch/get_relative_angle.launch">
+        <arg name="roomba" default="$(arg leader)"/>
+    </include>
 
     <!-- for follower -->
     <group ns="$(arg follower)">
