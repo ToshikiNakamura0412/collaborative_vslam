@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- roomba number -->
+    <arg name="roomba" default="roomba1"/>
+
+    <!-- color_detector -->
+    <!-- <node pkg="image_color_detector" type="image_color_detector_node" name="$(arg roomba)_image_color_detector" output="screen"> -->
+    <node pkg="image_color_detector" type="image_color_detector_node" name="$(arg roomba)_image_color_detector">
+        <!-- sub -->
+        <remap from="/equirectangular/image_raw" to="$(arg roomba)/equirectangular/image_raw" />
+        <!-- pub -->
+        <remap from="/target/angle" to="$(arg roomba)/target/angle" />
+        <!-- parameter -->
+        <rosparam command="load" file="$(find color_detector_params)/config/config.yaml"/>
+        <param name="ONLY_PUBLISH_MASK_IMAGE" value="false"/>
+    </node>
+
+    <!-- image_transport -->
+    <arg name="image_raw_topic" default="/theta_s/image_raw" />
+    <node pkg="image_transport" type="republish" name="$(arg roomba)_theta_s_republish" args="compressed raw" >
+        <remap from="in"  to="$(arg roomba)/$(arg image_raw_topic)" />
+        <remap from="out" to="$(arg roomba)/$(arg image_raw_topic)" />
+    </node>
+
+    <!-- theta_s_ros -->
+    <node pkg="theta_s_ros" type="image_converter" name="$(arg roomba)_theta_s_converter" >
+        <remap from="/camera/image_raw" to="$(arg roomba)/$(arg image_raw_topic)" />
+        <remap from="/equirectangular/image_raw" to="$(arg roomba)/equirectangular/image_raw" />
+    </node>
+</launch>
