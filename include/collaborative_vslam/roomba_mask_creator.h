@@ -37,7 +37,7 @@ private:
     // Variable
     int hz_;
     bool flag_bbox_ = false;
-    BBoxInfo bbox_info_;
+    std::vector<BBoxInfo> bboxs_info_;
 
     // NodeHandle
     ros::NodeHandle nh_;
