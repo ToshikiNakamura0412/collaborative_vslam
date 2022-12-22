@@ -12,7 +12,7 @@
     <include file="$(find collaborative_vslam)/launch/unzipping.launch">
         <arg name="roomba" default="$(arg roomba)"/>
     </include>
-    <include file="$(find darknet_ros)/launch/dkan.launch">
+    <include file="$(find collaborative_vslam)/launch/yolo.launch">
         <arg name="roomba" default="$(arg roomba)"/>
     </include>
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find collaborative_vslam)/config/rviz/creat_mask_image.rviz"/>
