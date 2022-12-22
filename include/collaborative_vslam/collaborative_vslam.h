@@ -12,10 +12,10 @@
 #include <tf/transform_broadcaster.h>
 
 // custom msg
-#include <color_detector_msgs/TargetAngle.h>
 #include <color_detector_msgs/TargetAngleList.h>
-#include <object_detector_msgs/ObjectPosition.h>
+#include <color_detector_msgs/TargetAngle.h>
 #include <object_detector_msgs/ObjectPositions.h>
+#include <object_detector_msgs/ObjectPosition.h>
 
 #include "collaborative_vslam/point.h"
 
@@ -53,21 +53,22 @@ private:
     void  calc_follower_pose_in_leader_map();
     void  calc_leader_pos();
     void  calc_leader_quat(geometry_msgs::Quaternion& leader_quat_msg);
-
     void  tf_follow_pose();
     void  pub_leader_pose_from_follower();
     void  broadcast_leader_state();
+    void  set_tf_for_map();
     Point rotate_pitch(const object_detector_msgs::ObjectPosition& input_point, const double pitch);
     Point adjust_follower_scale_to_leader(const Point point);
     Point adjust_leader_scale_to_follower(const Point point);
     Point adjust_scale_to_leader(const Point point);
     Point adjust_scale_to_follower(const Point point);
-    void  set_tf_for_map();
     bool  can_set_tf_for_map();
     bool  is_init_leader();
     bool  is_init_follower();
     double normalize_angle(double angle);
     double getPitch(geometry_msgs::Quaternion& quat_msg);
+    double calc_hypot(const object_detector_msgs::ObjectPosition obj1, const object_detector_msgs::ObjectPosition obj2);
+    double calc_hypot(const object_detector_msgs::ObjectPosition obj);
 
 
     // ----- Variable -----
@@ -128,6 +129,7 @@ private:
     // follower info
     geometry_msgs::PoseStamped            follower_pose_;
     geometry_msgs::PoseStamped            follower_pose_in_leader_map_;
+    object_detector_msgs::ObjectPositions follower_relative_pos_set_;
     object_detector_msgs::ObjectPosition  follower_relative_pos_;
     geometry_msgs::PointStamped           follower_map_origin_;
     sensor_msgs::PointCloud2              leader_co_map_;

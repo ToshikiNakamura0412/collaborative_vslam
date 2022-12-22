@@ -148,9 +148,42 @@ void CollaborativeVSLAM::follower_map_merge_sign_callback(const std_msgs::Bool::
 
 void CollaborativeVSLAM::follower_relative_pos_callback(const object_detector_msgs::ObjectPositions::ConstPtr& msg)
 {
+    follower_relative_pos_set_.object_position.clear();
     for(const auto& obj : msg->object_position)
         if(obj.Class == "roomba")
-            follower_relative_pos_ = obj;
+            follower_relative_pos_set_.object_position.push_back(obj);
+
+    const int obj_count = follower_relative_pos_set_.object_position.size();
+    if(obj_count > 0)
+    {
+        int index_of_min_dist = 0;
+        double min_dist = calc_hypot(follower_relative_pos_, follower_relative_pos_set_.object_position[0]);
+        for(int i=0; i<obj_count; i++)
+        {
+            if(calc_hypot(follower_relative_pos_set_.object_position[i])/calc_hypot(follower_relative_pos_) > 1.2)
+                continue; // 距離が大きく異なる場合スキップ
+
+            const double tmp_dist = calc_hypot(follower_relative_pos_, follower_relative_pos_set_.object_position[i]);
+            if(tmp_dist < min_dist)
+            {
+                min_dist = tmp_dist;
+                index_of_min_dist = i;
+            }
+        }
+        follower_relative_pos_ = follower_relative_pos_set_.object_position[index_of_min_dist];
+    }
+}
+
+double CollaborativeVSLAM::calc_hypot(const object_detector_msgs::ObjectPosition obj1, const object_detector_msgs::ObjectPosition obj2)
+{
+    const double dx = obj1.x - obj2.x;
+    const double dy = obj1.y - obj2.y;
+    const double dz = obj1.z - obj2.z;
+    return hypot(dx, dy, dz);
+}
+double CollaborativeVSLAM::calc_hypot(const object_detector_msgs::ObjectPosition obj)
+{
+    return hypot(obj.x, obj.y, obj.z);
 }
 
 void CollaborativeVSLAM::co_vslam()
