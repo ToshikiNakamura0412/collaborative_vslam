@@ -9,6 +9,7 @@
         <!-- topic name -->
         <!-- sub -->
         <remap from="/pose"       to="/$(arg roomba)/orb_slam3/camera_pose"/>
+        <remap from="/lost_sign"  to="/$(arg roomba)/orb_slam3/lost_sign"/>
         <remap from="/wheel_odom" to="/$(arg roomba)/roomba/odometry"/>
         <!-- pub -->
         <remap from="/visual_sign" to="/$(arg roomba)/visual_sign"/>

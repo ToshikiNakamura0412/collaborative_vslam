@@ -36,9 +36,10 @@ CollaborativeVSLAM::CollaborativeVSLAM():private_nh_("~")
     leader_relative_angle_sub_   = nh_.subscribe("/leader/follower_relative_angle", 1, &CollaborativeVSLAM::leader_relative_angle_callback, this);
     // from follower robot
     follower_pose_sub_             = nh_.subscribe("/follower/pose", 1, &CollaborativeVSLAM::follower_pose_callback, this);
+    follower_scale_ratio_sub_      = nh_.subscribe("/follower/scale_ratio", 1, &CollaborativeVSLAM::follower_scale_ratio_callback, this);
     follower_init_visual_sign_sub_ = nh_.subscribe("/follower/visual_sign", 1, &CollaborativeVSLAM::follower_init_visual_sign_callback, this);
     follower_init_ratio_sign_sub_  = nh_.subscribe("/follower/ratio_sign", 1, &CollaborativeVSLAM::follower_init_ratio_sign_callback, this);
-    follower_scale_ratio_sub_      = nh_.subscribe("/follower/scale_ratio", 1, &CollaborativeVSLAM::follower_scale_ratio_callback, this);
+    follower_lost_sign_sub_        = nh_.subscribe("/follower/lost_sign", 1, &CollaborativeVSLAM::follower_lost_sign_callback, this);
     follower_relative_pos_sub_     = nh_.subscribe("/follower/relative_position", 1, &CollaborativeVSLAM::follower_relative_pos_callback, this);
 
     // ===== Publisher =====
@@ -99,6 +100,7 @@ void CollaborativeVSLAM::leader_init_ratio_sign_callback(const std_msgs::Bool::C
 void CollaborativeVSLAM::leader_lost_sign_callback(const std_msgs::Bool::ConstPtr& msg)
 {
     leader_flag_lost_ = *msg;
+    ROS_INFO_STREAM("leader:" << leader_flag_lost_);
 }
 
 void CollaborativeVSLAM::leader_map_merge_sign_callback(const std_msgs::Bool::ConstPtr& msg)
@@ -139,6 +141,7 @@ void CollaborativeVSLAM::follower_init_ratio_sign_callback(const std_msgs::Bool:
 void CollaborativeVSLAM::follower_lost_sign_callback(const std_msgs::Bool::ConstPtr& msg)
 {
     follower_flag_lost_ = *msg;
+    ROS_INFO_STREAM("follower:" << follower_flag_lost_);
 }
 
 void CollaborativeVSLAM::follower_map_merge_sign_callback(const std_msgs::Bool::ConstPtr& msg)

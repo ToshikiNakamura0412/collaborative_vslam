@@ -108,9 +108,10 @@ private:
     ros::Subscriber leader_relative_angle_sub_;
     // from follower robot
     ros::Subscriber follower_pose_sub_;
+    ros::Subscriber follower_scale_ratio_sub_;
     ros::Subscriber follower_init_visual_sign_sub_;
     ros::Subscriber follower_init_ratio_sign_sub_;
-    ros::Subscriber follower_scale_ratio_sub_;
+    ros::Subscriber follower_lost_sign_sub_;
     ros::Subscriber follower_relative_pos_sub_;
 
     // Publisher
