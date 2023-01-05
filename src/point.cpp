@@ -20,6 +20,12 @@ Point::Point(const double x, const double z)
     x_ = x;
     z_ = z;
 }
+Point::Point(const geometry_msgs::PoseStamped& pose)
+{
+    x_ = pose.pose.position.x;
+    y_ = pose.pose.position.y;
+    z_ = pose.pose.position.z;
+}
 Point::Point(const geometry_msgs::PointStamped& point)
 {
     x_ = point.point.x;
@@ -56,6 +62,20 @@ Point& Point::operator *=(const double a)
     y_ /= a;
     z_ /= a;
     return *this;
+}
+
+// 単項演算子
+Point Point::operator +() const
+{
+    return *this;
+}
+Point Point::operator -() const
+{
+    Point tmp;
+    tmp.x_ = -x_;
+    tmp.y_ = -y_;
+    tmp.z_ = -z_;
+    return tmp;
 }
 
 // 算術演算子
