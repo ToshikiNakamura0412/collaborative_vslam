@@ -11,14 +11,16 @@
         <remap from="/leader/pose"                    to="$(arg leader)/orb_slam3/camera_pose"/>
         <remap from="/leader/active_map"              to="$(arg leader)/orb_slam3/all_mappoints"/>
         <remap from="/leader/lost_sign"               to="$(arg leader)/orb_slam3/lost_sign"/>
-        <remap from="/leader/visual_sign"             to="$(arg leader)/visual_sign"/>
+        <remap from="/leader/visual_sign"             to="$(arg leader)/orb_slam3/visualize_sign"/>
+        <!-- <remap from="/leader/visual_sign"             to="$(arg leader)/visual_sign"/> -->
         <remap from="/leader/ratio_sign"              to="$(arg leader)/ratio_sign"/>
         <remap from="/leader/scale_ratio"             to="$(arg leader)/scale_ratio"/>
         <remap from="/leader/follower_relative_angle" to="$(arg leader)/target/angle"/>
         <!-- for follower -->
         <remap from="/follower/pose"              to="$(arg follower)/orb_slam3/camera_pose"/>
         <remap from="/follower/lost_sign"         to="$(arg follower)/orb_slam3/lost_sign"/>
-        <remap from="/follower/visual_sign"       to="$(arg follower)/visual_sign"/>
+        <remap from="/follower/visual_sign"       to="$(arg follower)/orb_slam3/visualize_sign"/>
+        <!-- <remap from="/follower/visual_sign"       to="$(arg follower)/visual_sign"/> -->
         <remap from="/follower/ratio_sign"        to="$(arg follower)/ratio_sign"/>
         <remap from="/follower/scale_ratio"       to="$(arg follower)/scale_ratio"/>
         <remap from="/follower/relative_position" to="$(arg follower)/object_positions"/>
@@ -27,9 +29,12 @@
         <!-- for leader -->
         <remap from="/leader/collaborative_pose" to="/$(arg leader)/collaborative_pose"/>
         <remap from="/leader/pose_from_follower" to="/$(arg leader)/pose_from_follower"/>
-        <remap from="/leader/collaborative_map"  to="$(arg leader)/collaborative_map"/>
+        <remap from="/leader/follower_pose"      to="/$(arg leader)/follower_pose"/>
+        <remap from="/leader/collaborative_map"  to="/$(arg leader)/collaborative_map"/>
         <!-- for follower -->
         <remap from="/follower/collaborative_pose" to="/$(arg follower)/collaborative_pose"/>
+        <remap from="/follower/pose_from_follower" to="/$(arg follower)/pose_from_follower"/>
+        <remap from="/follower/leader_pose"        to="/$(arg follower)/leader_pose"/>
         <remap from="/follower/map_origin"         to="/$(arg follower)/map_origin"/>
 
         <!-- parameter -->
