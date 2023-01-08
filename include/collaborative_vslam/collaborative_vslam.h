@@ -121,6 +121,7 @@ private:
     bool co_flag_tf_map_origin_;
     bool co_flag_lost_leader_;
     bool co_flag_lost_follower_;
+    geometry_msgs::PointStamped co_map_origin_;
 
     // for leader robote
     int    leader_lost_count_;
@@ -164,7 +165,6 @@ private:
     // collaborative
     geometry_msgs::PoseStamped  follower_co_pose_;
     geometry_msgs::PoseStamped  follower_pose_on_return_;
-    geometry_msgs::PointStamped follower_map_origin_;
 
 
 
@@ -194,6 +194,8 @@ private:
     ros::Subscriber follower_relative_pos_sub_;
 
     // Publisher
+    // for collaborative system
+    ros::Publisher co_map_origin_pub_;
     // for leader robot
     ros::Publisher leader_pose_pub_;
     ros::Publisher leader_pose_from_follower_pub_;
@@ -204,7 +206,6 @@ private:
     ros::Publisher follower_pose_from_leader_pub_;
     ros::Publisher follower_pose_in_leader_map_pub_;
     ros::Publisher follower_map_pub_;
-    ros::Publisher follower_map_origin_pub_;
 };
 
 #endif
