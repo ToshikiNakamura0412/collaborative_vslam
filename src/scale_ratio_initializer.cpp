@@ -13,16 +13,18 @@ ScaleRatioInitializer::ScaleRatioInitializer():private_nh_("~")
     visual_dist_for_init_  = 0.0;
     scale_ratio_.data      = 0.0;
     flag_init_ratio_.data  = false;
-    flag_init_visual_.data = false;
+    // flag_init_visual_.data = false;
+    flag_init_visual_      = false;
     flag_lost_             = false;
 
     // Subscriber
-    pose_sub_       = nh_.subscribe("/pose", 1, &ScaleRatioInitializer::pose_callback, this);
-    wheel_odom_sub_ = nh_.subscribe("/wheel_odom", 1, &ScaleRatioInitializer::wheel_odom_callback, this);
-    lost_sign_sub_  = nh_.subscribe("/lost_sign", 1, &ScaleRatioInitializer::lost_sign_callback, this);
+    pose_sub_        = nh_.subscribe("/pose", 1, &ScaleRatioInitializer::pose_callback, this);
+    wheel_odom_sub_  = nh_.subscribe("/wheel_odom", 1, &ScaleRatioInitializer::wheel_odom_callback, this);
+    lost_sign_sub_   = nh_.subscribe("/lost_sign", 1, &ScaleRatioInitializer::lost_sign_callback, this);
+    visual_sign_sub_ = nh_.subscribe("/visual_sign", 1, &ScaleRatioInitializer::visual_sign_callback, this);
 
     // Publisher
-    init_visual_pub_ = nh_.advertise<std_msgs::Bool>("/visual_sign", 1);
+    // init_visual_pub_ = nh_.advertise<std_msgs::Bool>("/visual_sign", 1);
     init_ratio_pub_  = nh_.advertise<std_msgs::Bool>("/ratio_sign", 1);
     ratio_pub_       = nh_.advertise<std_msgs::Float64>("/scale_ratio", 1);
 }
@@ -45,19 +47,19 @@ void ScaleRatioInitializer::pose_callback(const geometry_msgs::PoseStamped::Cons
     prev_pose_ = last_pose_;
     last_pose_ = *msg;
 
-    if(not flag_init_visual_.data)
-    {
-        const double move_dist = calc_hypot(last_pose_.pose.position, prev_pose_.pose.position);
-        ROS_INFO_STREAM("move_dist = " << move_dist << " | th = " << move_dist_th_ << " | flag_init_visual-> " << (move_dist_th_ < move_dist));
-        if(move_dist_th_ < move_dist)
-        {
-            flag_init_visual_.data = true;  // 動き出したらフラグを立てる
-            init_begin_ = ros::Time::now(); // スケール比の初回化スタート時間の設定
-        }
-
-        if(flag_init_visual_.data)
-            init_visual_pub_.publish(flag_init_visual_);
-    }
+    // if(not flag_init_visual_.data)
+    // {
+    //     const double move_dist = calc_hypot(last_pose_.pose.position, prev_pose_.pose.position);
+    //     ROS_INFO_STREAM("move_dist = " << move_dist << " | th = " << move_dist_th_ << " | flag_init_visual-> " << (move_dist_th_ < move_dist));
+    //     if(move_dist_th_ < move_dist)
+    //     {
+    //         flag_init_visual_.data = true;  // 動き出したらフラグを立てる
+    //         init_begin_ = ros::Time::now(); // スケール比の初回化スタート時間の設定
+    //     }
+    //
+    //     if(flag_init_visual_.data)
+    //         init_visual_pub_.publish(flag_init_visual_);
+    // }
 }
 
 void ScaleRatioInitializer::wheel_odom_callback(const nav_msgs::Odometry::ConstPtr& msg)
@@ -71,9 +73,19 @@ void ScaleRatioInitializer::lost_sign_callback(const std_msgs::Bool::ConstPtr& m
     flag_lost_ = msg->data;
 }
 
+void ScaleRatioInitializer::visual_sign_callback(const std_msgs::Bool::ConstPtr& msg)
+{
+    if(msg->data)
+    {
+        flag_init_visual_ = true;  // 動き出したらフラグを立てる
+        init_begin_ = ros::Time::now(); // スケール比の初回化スタート時間の設定
+    }
+}
+
 void ScaleRatioInitializer::init_scale_ratio()
 {
-    if(not flag_init_visual_.data or flag_init_ratio_.data) return;
+    // if(not flag_init_visual_.data or flag_init_ratio_.data) return;
+    if(not flag_init_visual_) return;
 
     const double elapsed_time = ros::Time::now().toSec() - init_begin_.toSec();
     if(elapsed_time < duration_init_) // 移動量を加算
@@ -96,8 +108,9 @@ void ScaleRatioInitializer::init_scale_ratio()
 
         if(flag_init_ratio_.data)
         {
+            init_ratio_pub_.publish(flag_init_ratio_); // 不要？
             ratio_pub_.publish(scale_ratio_);
-            init_ratio_pub_.publish(flag_init_ratio_);
+            flag_init_visual_ = false;
         }
     }
 }

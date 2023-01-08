@@ -145,16 +145,16 @@ void Point::set(const double x, const double y, const double z)
     y_ = y;
     z_ = z;
 }
-void Point::set(const double x, const double z)
-{
-    x_ = x;
-    z_ = z;
-}
 void Point::set(const geometry_msgs::Point& point)
 {
     x_ = point.x;
     y_ = point.y;
     z_ = point.z;
+}
+void Point::set_xz(const double x, const double z)
+{
+    x_ = x;
+    z_ = z;
 }
 
 // output
@@ -170,9 +170,13 @@ void Point::output(geometry_msgs::PointStamped& point)
     point.point.y = y_;
     point.point.z = z_;
 }
+void Point::output_xz(pcl::PointXYZ& point)
+{
+    point.x = x_;
+    point.z = z_;
+}
 void Point::output_xz(geometry_msgs::PointStamped& point)
 {
     point.point.x = x_;
-    point.point.y = 0.0;
     point.point.z = z_;
 }

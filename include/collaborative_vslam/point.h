@@ -4,6 +4,7 @@
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <pcl_ros/point_cloud.h>
 
 class Point
 {
@@ -34,10 +35,14 @@ public:
 
     // accessor
     void set(const double x, const double y, const double z);
-    void set(const double x, const double z);
     void set(const geometry_msgs::Point& point);
+    void set_xz(const double x, const double z);
+    void set_x(const double x){ x_ = x; }
+    void set_y(const double y){ y_ = y; }
+    void set_z(const double z){ z_ = z; }
     void output(geometry_msgs::PoseStamped& pose);
     void output(geometry_msgs::PointStamped& point);
+    void output_xz(pcl::PointXYZ& point);
     void output_xz(geometry_msgs::PointStamped& point);
     double x() const { return x_; }
     double y() const { return y_; }

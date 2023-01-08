@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
     geometry_msgs
     tf
     cv_bridge
+    pcl_ros
     darknet_ros_msgs
     color_detector_msgs
     object_detector_msgs
