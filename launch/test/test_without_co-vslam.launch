@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- allとの違い -->
+    <!--
+    以下のファイルが実行されていない
+        collaborative_vslam.launch
+        initialize_map_scale_ratio.launch
+    -->
+
+
+    <!-- roomba number -->
+    <arg name="leader"   default="roomba1"/>
+    <arg name="follower" default="roomba3"/>
+
+
+    <!-- launch node -->
+    <!-- for leader -->
+    <group ns="$(arg leader)">
+        <include file="$(find collaborative_vslam)/launch/single_vslam_mono.launch">
+            <arg name="roomba" default="$(arg leader)"/>
+        </include>
+    </group>
+    <include file="$(find collaborative_vslam)/launch/unzipping.launch">
+        <arg name="roomba" default="$(arg leader)"/>
+    </include>
+    <include file="$(find collaborative_vslam)/launch/get_relative_angle.launch">
+        <arg name="roomba" default="$(arg leader)"/>
+    </include>
+
+    <!-- for follower -->
+    <group ns="$(arg follower)">
+        <include file="$(find collaborative_vslam)/launch/single_vslam_mono.launch">
+            <arg name="roomba" default="$(arg follower)"/>
+            <arg name="image"  default="mask_image"/>
+        </include>
+    </group>
+    <include file="$(find collaborative_vslam)/launch/creat_roomba_mask_image.launch">
+        <arg name="roomba" default="$(arg follower)"/>
+    </include>
+    <include file="$(find collaborative_vslam)/launch/unzipping.launch">
+        <arg name="roomba" default="$(arg follower)"/>
+    </include>
+    <include file="$(find collaborative_vslam)/launch/yolo.launch">
+        <arg name="roomba" default="$(arg follower)"/>
+    </include>
+    <include file="$(find collaborative_vslam)/launch/get_relative_position.launch">
+        <arg name="roomba" default="$(arg follower)"/>
+    </include>
+</launch>

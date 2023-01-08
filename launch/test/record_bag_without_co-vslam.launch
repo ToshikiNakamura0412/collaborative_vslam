@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- 必要なトピック -->
+    <!--
+    以下のファイル実行に必要なトピックをrecordする
+        collaborative_vslam.launch
+        initialize_map_scale_ratio.launch
+    -->
+
+
+    <!-- roomba number -->
+    <arg name="leader"   default="roomba1"/>
+    <arg name="follower" default="roomba3"/>
+
+    <!-- record bag -->
+    <node pkg="rosbag" type="record" name="rosbag_record" args="record -o /home/amsl/bagfiles/bagfiles_without_co-vslam/test_without_co-vslam.bag
+        /$(arg leader)/scale_ratio
+        /$(arg leader)/orb_slam3/visualize_sign
+        /$(arg leader)/orb_slam3/lost_sign
+        /$(arg leader)/orb_slam3/merge_sign
+        /$(arg leader)/orb_slam3/camera_pose
+        /$(arg leader)/orb_slam3/all_mappoints
+        /$(arg leader)/target/angle
+        /$(arg leader)/roomba/odometry
+        /$(arg follower)/scale_ratio
+        /$(arg follower)/orb_slam3/visualize_sign
+        /$(arg follower)/orb_slam3/lost_sign
+        /$(arg follower)/orb_slam3/merge_sign
+        /$(arg follower)/orb_slam3/camera_pose
+        /$(arg follower)/orb_slam3/all_mappoints
+        /$(arg follower)/object_positions
+        /$(arg follower)/roomba/odometry"/>
+</launch>
