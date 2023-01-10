@@ -9,8 +9,6 @@
         <!-- sub -->
         <!-- for leader -->
         <remap from="/leader/scale_ratio"             to="$(arg leader)/scale_ratio"/>
-        <!-- <remap from="/leader/ratio_sign"              to="$(arg leader)/ratio_sign"/> -->
-        <!-- <remap from="/leader/visual_sign"             to="$(arg leader)/visual_sign"/> -->
         <remap from="/leader/visual_sign"             to="$(arg leader)/orb_slam3/visualize_sign"/>
         <remap from="/leader/lost_sign"               to="$(arg leader)/orb_slam3/lost_sign"/>
         <remap from="/leader/map_merge_sign"          to="$(arg leader)/orb_slam3/merge_sign"/>
@@ -19,8 +17,6 @@
         <remap from="/leader/follower_relative_angle" to="$(arg leader)/target/angle"/>
         <!-- for follower -->
         <remap from="/follower/scale_ratio"       to="$(arg follower)/scale_ratio"/>
-        <!-- <remap from="/follower/ratio_sign"        to="$(arg follower)/ratio_sign"/> -->
-        <!-- <remap from="/follower/visual_sign"       to="$(arg follower)/visual_sign"/> -->
         <remap from="/follower/visual_sign"       to="$(arg follower)/orb_slam3/visualize_sign"/>
         <remap from="/follower/lost_sign"         to="$(arg follower)/orb_slam3/lost_sign"/>
         <remap from="/follower/map_merge_sign"    to="$(arg follower)/orb_slam3/merge_sign"/>

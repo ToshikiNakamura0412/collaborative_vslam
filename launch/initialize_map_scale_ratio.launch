@@ -4,8 +4,8 @@
     <arg name="roomba" default="roomba1"/>
 
     <!-- launch node -->
-    <!-- <node pkg="collaborative_vslam" type="scale_ratio_initializer_node" name="$(arg roomba)_init_ratio"> -->
-    <node pkg="collaborative_vslam" type="scale_ratio_initializer_node" name="$(arg roomba)_init_ratio" output="screen">
+    <!-- <node pkg="collaborative_vslam" type="scale_ratio_initializer_node" name="$(arg roomba)_init_ratio" output="screen"> -->
+    <node pkg="collaborative_vslam" type="scale_ratio_initializer_node" name="$(arg roomba)_init_ratio">
         <!-- topic name -->
         <!-- sub -->
         <remap from="/visual_sign" to="/$(arg roomba)/orb_slam3/visualize_sign"/>
@@ -16,8 +16,9 @@
         <remap from="/scale_ratio" to="/$(arg roomba)/scale_ratio"/>
 
         <!-- parameter -->
-        <param name="/hz" value="15"/>
+        <param name="/hz" value="20"/>
+        <param name="/accumulation_mode" value="true"/>
         <param name="/scale_ratio_th_percent" value="0.2"/>
-        <param name="/duration_init" value="1.0"/>
+        <param name="/duration_time" value="1.0"/>
     </node>
 </launch>
