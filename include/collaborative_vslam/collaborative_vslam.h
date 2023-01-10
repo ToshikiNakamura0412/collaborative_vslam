@@ -33,7 +33,6 @@ private:
     //   for leader robot
     void leader_scale_ratio_callback(const std_msgs::Float64::ConstPtr& msg);
     void leader_init_visual_sign_callback(const std_msgs::Bool::ConstPtr& msg);
-    void leader_init_ratio_sign_callback(const std_msgs::Bool::ConstPtr& msg);
     void leader_lost_sign_callback(const std_msgs::Bool::ConstPtr& msg);
     void leader_map_merge_sign_callback(const std_msgs::Bool::ConstPtr& msg);
     void leader_pose_callback(const geometry_msgs::PoseStamped::ConstPtr& msg);
@@ -43,7 +42,6 @@ private:
     //   for leader robot
     void follower_scale_ratio_callback(const std_msgs::Float64::ConstPtr& msg);
     void follower_init_visual_sign_callback(const std_msgs::Bool::ConstPtr& msg);
-    void follower_init_ratio_sign_callback(const std_msgs::Bool::ConstPtr& msg);
     void follower_lost_sign_callback(const std_msgs::Bool::ConstPtr& msg);
     void follower_map_merge_sign_callback(const std_msgs::Bool::ConstPtr& msg);
     void follower_pose_callback(const geometry_msgs::PoseStamped::ConstPtr& msg);
@@ -60,7 +58,6 @@ private:
     bool can_set_tf_for_map();
 
     //   for leader robot
-    bool  is_init_leader();
     //   - pose
     void  calc_leader_pose();
     void  calc_follower_pose_in_leader_map();
@@ -77,7 +74,6 @@ private:
     void  update_leader_stored_map();
 
     //   for follower robot
-    bool  is_init_follower();
     //   - pose
     void  calc_follower_pose();
     void  calc_leader_pose_in_follower_map();
@@ -127,16 +123,16 @@ private:
     int    leader_lost_count_;
     double leader_scale_ratio_;
     bool   leader_flag_tf_map_;
+    bool   leader_flag_init_ratio_;
     std_msgs::Bool leader_flag_init_visual_;
-    std_msgs::Bool leader_flag_init_ratio_;
     std_msgs::Bool leader_flag_lost_;
 
     // for follower robot
     int    follower_lost_count_;
     double follower_scale_ratio_;
     bool   follower_flag_tf_map_;
+    bool   follower_flag_init_ratio_;
     std_msgs::Bool follower_flag_init_visual_;
-    std_msgs::Bool follower_flag_init_ratio_;
     std_msgs::Bool follower_flag_lost_;
 
 
@@ -177,7 +173,6 @@ private:
     // from leader robot
     ros::Subscriber leader_scale_ratio_sub_;
     ros::Subscriber leader_init_visual_sign_sub_;
-    ros::Subscriber leader_init_ratio_sign_sub_;
     ros::Subscriber leader_lost_sign_sub_;
     ros::Subscriber leader_map_merge_sign_sub_;
     ros::Subscriber leader_pose_sub_;
@@ -186,7 +181,6 @@ private:
     // from follower robot
     ros::Subscriber follower_scale_ratio_sub_;
     ros::Subscriber follower_init_visual_sign_sub_;
-    ros::Subscriber follower_init_ratio_sign_sub_;
     ros::Subscriber follower_lost_sign_sub_;
     ros::Subscriber follower_map_merge_sign_sub_;
     ros::Subscriber follower_pose_sub_;
