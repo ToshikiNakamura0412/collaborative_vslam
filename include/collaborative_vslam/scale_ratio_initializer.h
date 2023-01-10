@@ -23,15 +23,19 @@ private:
 
     // others
     void init_scale_ratio();
+    void init_parameters();
+    void init_dist();
+    void init_flag();
     double calc_hypot(geometry_msgs::Point last_point, geometry_msgs::Point prev_point);
 
 
     // ----- Variable -----
     int    hz_;
-    bool   flag_lost_;
     bool   flag_init_visual_;
+    bool   flag_lost_;
+    bool   accumulation_mode_;
     double scale_ratio_th_percent_;
-    double duration_init_;
+    double duration_time_;
     double wheel_dist_for_init_;
     double visual_dist_for_init_;
 
