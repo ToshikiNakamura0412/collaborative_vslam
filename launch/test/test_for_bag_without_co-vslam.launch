@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- roomba number -->
+    <arg name="leader"   default="roomba1"/>
+    <arg name="follower" default="roomba3"/>
+
+
+    <!-- launch node -->
+    <!-- for server -->
+    <include file="$(find collaborative_vslam)/launch/collaborative_vslam.launch">
+        <arg name="leader"   default="$(arg leader)"/>
+        <arg name="follower" default="$(arg follower)"/>
+    </include>
+
+    <!-- for leader -->
+    <include file="$(find collaborative_vslam)/launch/initialize_map_scale_ratio.launch">
+        <arg name="roomba" default="$(arg leader)"/>
+    </include>
+
+    <!-- for follower -->
+    <include file="$(find collaborative_vslam)/launch/initialize_map_scale_ratio.launch">
+        <arg name="roomba" default="$(arg follower)"/>
+    </include>
+
+    <!-- Visualization - RViz-->
+    <node pkg="rviz" type="rviz" name="co_leader_rviz" args="-d $(find collaborative_vslam)/config/rviz/test_for_bag_without_co-vslam.rviz" output="screen"/>
+    <!-- <node pkg="rviz" type="rviz" name="leader_rviz" args="-d $(find collaborative_vslam)/config/rviz/leader_orb_slam.rviz" output="screen"/> -->
+
+    <!-- bag play -->
+    <arg name="bag_file_path"   default="$(env HOME)/bagfiles/test_without_co-vslam_2023-01-08-19-24-09.bag"/>
+    <node pkg="rosbag" type="play" name="rosbag" args="$(arg bag_file_path)"/>
+</launch>
