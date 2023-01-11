@@ -87,12 +87,14 @@ void ScaleRatioInitializer::init_scale_ratio()
         const bool flag_init_ratio = ratio_diff < scale_ratio_th_percent_/100.0;
 
         // debug
-        ROS_INFO_STREAM("---");
-        ROS_INFO_STREAM("visual_dist = " << visual_dist_for_init_);
-        ROS_INFO_STREAM("wheel_dist  = " << wheel_dist_for_init_);
-        ROS_INFO_STREAM("old_ratio = " << scale_ratio_.data << "[%]");
-        ROS_INFO_STREAM("new_ratio = " << new_ratio << "[%]");
-        ROS_INFO_STREAM("ratio_diff = " << ratio_diff*100.0 << "[%] | goal = " << scale_ratio_th_percent_ << "[%] | flag_init -> " << flag_init_ratio);
+        {
+            ROS_INFO_STREAM("---");
+            ROS_INFO_STREAM("visual_dist = " << visual_dist_for_init_);
+            ROS_INFO_STREAM("wheel_dist  = " << wheel_dist_for_init_);
+            ROS_INFO_STREAM("old_ratio   = " << scale_ratio_.data << "[%]");
+            ROS_INFO_STREAM("new_ratio   = " << new_ratio << "[%]");
+            ROS_INFO_STREAM("ratio_diff  = " << ratio_diff*100.0 << "[%] | th = " << scale_ratio_th_percent_ << "[%]");
+        }
 
         // renew
         if(not accumulation_mode_) init_dist();

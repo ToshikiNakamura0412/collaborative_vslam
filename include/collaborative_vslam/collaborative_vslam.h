@@ -22,6 +22,16 @@
 #include "collaborative_vslam/point.h"
 
 
+struct SlamState
+{
+    bool   flag_tf_map      = false;
+    bool   flag_init_ratio  = false;
+    bool   flag_init_visual = false;
+    bool   flag_lost        = false;
+    int    lost_count       = 0;
+    double scale_ratio      = 0.0;
+};
+
 class CollaborativeVSLAM
 {
 public:
@@ -120,20 +130,10 @@ private:
     geometry_msgs::PointStamped co_map_origin_;
 
     // for leader robote
-    int    leader_lost_count_;
-    double leader_scale_ratio_;
-    bool   leader_flag_tf_map_;
-    bool   leader_flag_init_ratio_;
-    std_msgs::Bool leader_flag_init_visual_;
-    std_msgs::Bool leader_flag_lost_;
+    SlamState leader_;
 
     // for follower robot
-    int    follower_lost_count_;
-    double follower_scale_ratio_;
-    bool   follower_flag_tf_map_;
-    bool   follower_flag_init_ratio_;
-    std_msgs::Bool follower_flag_init_visual_;
-    std_msgs::Bool follower_flag_lost_;
+    SlamState follower_;
 
 
     // Leader robot status

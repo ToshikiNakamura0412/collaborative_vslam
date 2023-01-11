@@ -7,22 +7,9 @@ CollaborativeVSLAM::CollaborativeVSLAM():private_nh_("~")
     private_nh_.param<std::string>("map_frame_id", map_frame_id_, "world");
 
     // ----- Other Parameters Initialization -----
-    // for collaborative system
     co_flag_tf_map_origin_ = false;
     co_flag_lost_leader_   = false;
     co_flag_lost_follower_ = false;
-    // for leader robot
-    leader_lost_count_  = 0;
-    leader_flag_tf_map_ = false;
-    leader_flag_init_ratio_ = false;
-    leader_flag_init_visual_.data = false;
-    leader_flag_lost_.data        = false;
-    // for follower robot
-    follower_lost_count_  = 0;
-    follower_flag_tf_map_ = false;
-    follower_flag_init_ratio_ = false;
-    follower_flag_init_visual_.data = false;
-    follower_flag_lost_.data        = false;
 
 
     // ----- Subscriber -----
@@ -67,11 +54,13 @@ CollaborativeVSLAM::CollaborativeVSLAM():private_nh_("~")
     leader_pose_from_follower_.header.frame_id   = map_frame_id_;
     leader_pose_in_follower_map_.header.frame_id = map_frame_id_;
     leader_active_map_.header.frame_id           = map_frame_id_;
+    leader_stored_map_.header.frame_id           = map_frame_id_;
     // for follower robot
     follower_pose_.header.frame_id               = map_frame_id_;
     follower_pose_from_leader_.header.frame_id   = map_frame_id_;
     follower_pose_in_leader_map_.header.frame_id = map_frame_id_;
-    // follower_active_map_.header.frame_id           = map_frame_id_;
+    follower_active_map_.header.frame_id         = map_frame_id_;
+    follower_stored_map_.header.frame_id         = map_frame_id_;
 }
 
 // main process
@@ -90,34 +79,36 @@ void CollaborativeVSLAM::process()
 // callback function for leader robot
 void CollaborativeVSLAM::leader_scale_ratio_callback(const std_msgs::Float64::ConstPtr& msg)
 {
-    leader_scale_ratio_ = msg->data;
-    leader_flag_init_ratio_ = true;
+    leader_.scale_ratio = msg->data;
+    leader_.flag_init_ratio = true;
     ROS_INFO_STREAM("leader initialized scale ratio!!");
-    ROS_INFO_STREAM("scale ratio = " << leader_scale_ratio_);
+    ROS_INFO_STREAM("scale ratio = " << leader_.scale_ratio);
 }
 
 void CollaborativeVSLAM::leader_init_visual_sign_callback(const std_msgs::Bool::ConstPtr& msg)
 {
-    leader_flag_init_visual_ = *msg;
-    if(leader_flag_init_visual_.data)
+    leader_.flag_init_visual = msg->data;
+    if(leader_.flag_init_visual)
     {
         ROS_INFO_STREAM("leader start tracking!!");
-        leader_pose_on_return_ = leader_co_pose_;
+        leader_pose_on_return_  = leader_co_pose_;
+        co_flag_tf_map_origin_  = false;
+        leader_.flag_init_ratio = false;
     }
 }
 
 void CollaborativeVSLAM::leader_lost_sign_callback(const std_msgs::Bool::ConstPtr& msg)
 {
-    if(not leader_flag_lost_.data and leader_flag_lost_.data!=msg->data) ROS_INFO_STREAM("lost");
-    leader_flag_lost_ = *msg;
+    if(not leader_.flag_lost and leader_.flag_lost!=msg->data) ROS_INFO_STREAM("lost");
+    leader_.flag_lost = msg->data;
 
-    if(leader_flag_lost_.data and not co_flag_lost_leader_)
+    if(leader_.flag_lost and not co_flag_lost_leader_)
     {
         co_flag_lost_leader_ = true;
         update_leader_stored_map(); // TF済のactive_mapをstored_mapに追加
-        leader_lost_count_++;
+        leader_.lost_count++;
     }
-    else if(leader_flag_init_visual_.data)
+    else if(leader_.flag_init_visual)
     {
         co_flag_lost_leader_ = false;
     }
@@ -126,18 +117,13 @@ void CollaborativeVSLAM::leader_lost_sign_callback(const std_msgs::Bool::ConstPt
 // TF済のactive_mapをstored_mapに追加
 void CollaborativeVSLAM::update_leader_stored_map()
 {
-    // stored_mapに追加
-    if(leader_lost_count_ == 0) // 初回
-    {
-        leader_stored_map_ = leader_active_map_;
-    }
-    else // 2回目以降
-    {
-        // 復帰した地点をベースにmappointsをTF
+    // 復帰した地点をベースにmappointsをTF
+    if(leader_.lost_count > 0)
         tf_leader_active_map(); // TF済の場合，スキップされる
-        // 追加
-        leader_stored_map_.points.insert(leader_stored_map_.end(), leader_active_map_.points.begin(), leader_active_map_.points.end());
-    }
+
+    // stored_mapに追加
+    for(const auto& point : leader_active_map_.points)
+        leader_stored_map_.points.push_back(point);
 }
 
 void CollaborativeVSLAM::leader_map_merge_sign_callback(const std_msgs::Bool::ConstPtr& msg)
@@ -145,7 +131,7 @@ void CollaborativeVSLAM::leader_map_merge_sign_callback(const std_msgs::Bool::Co
     if(msg->data)
     {
         co_flag_tf_map_origin_ = false;
-        leader_lost_count_ = 0;
+        leader_.lost_count = 0;
         leader_stored_map_.points.clear();
     }
 }
@@ -161,7 +147,7 @@ void CollaborativeVSLAM::leader_active_map_callback(const sensor_msgs::PointClou
     if(msg->data.size() != 0)
     {
         pcl::fromROSMsg(*msg, leader_active_map_);
-        leader_flag_tf_map_ = false;
+        leader_.flag_tf_map = false;
     }
 }
 
@@ -176,34 +162,36 @@ void CollaborativeVSLAM::leader_relative_angle_callback(const color_detector_msg
 // callback function for follower robot
 void CollaborativeVSLAM::follower_scale_ratio_callback(const std_msgs::Float64::ConstPtr& msg)
 {
-    follower_scale_ratio_ = msg->data;
-    follower_flag_init_ratio_ = true;
+    follower_.scale_ratio = msg->data;
+    follower_.flag_init_ratio = true;
     ROS_INFO_STREAM("follower initialized scale ratio!!");
-    ROS_INFO_STREAM("scale ratio = " << follower_scale_ratio_);
+    ROS_INFO_STREAM("scale ratio = " << follower_.scale_ratio);
 }
 
 void CollaborativeVSLAM::follower_init_visual_sign_callback(const std_msgs::Bool::ConstPtr& msg)
 {
-    follower_flag_init_visual_ = *msg;
-    if(follower_flag_init_visual_.data)
+    follower_.flag_init_visual = msg->data;
+    if(follower_.flag_init_visual)
     {
         ROS_INFO_STREAM("follower start tracking!!");
-        follower_pose_on_return_ = follower_co_pose_;
+        follower_pose_on_return_  = follower_co_pose_;
+        co_flag_tf_map_origin_    = false;
+        follower_.flag_init_ratio = false;
     }
 }
 
 void CollaborativeVSLAM::follower_lost_sign_callback(const std_msgs::Bool::ConstPtr& msg)
 {
-    if(not follower_flag_lost_.data and follower_flag_lost_.data!=msg->data) ROS_INFO_STREAM("lost");
-    follower_flag_lost_ = *msg;
+    if(not follower_.flag_lost and follower_.flag_lost!=msg->data) ROS_INFO_STREAM("lost");
+    follower_.flag_lost = msg->data;
 
-    if(follower_flag_lost_.data and not co_flag_lost_follower_)
+    if(follower_.flag_lost and not co_flag_lost_follower_)
     {
         co_flag_lost_follower_ = true;
         update_follower_stored_map(); // TF済のactive_mapをstored_mapに追加
-        follower_lost_count_++;
+        follower_.lost_count++;
     }
-    else if(follower_flag_init_visual_.data)
+    else if(follower_.flag_init_visual)
     {
         co_flag_lost_follower_ = false;
     }
@@ -212,18 +200,13 @@ void CollaborativeVSLAM::follower_lost_sign_callback(const std_msgs::Bool::Const
 // TF済のactive_mapをstored_mapに追加
 void CollaborativeVSLAM::update_follower_stored_map()
 {
-    // stored_mapに追加
-    if(follower_lost_count_ == 0) // 初回
-    {
-        follower_stored_map_ = follower_active_map_;
-    }
-    else // 2回目以降
-    {
-        // 復帰した地点をベースにmappointsをTF
+    // 復帰した地点をベースにmappointsをTF
+    if(follower_.lost_count > 0)
         tf_follower_active_map(); // TF済の場合，スキップされる
-        // 追加
-        follower_stored_map_.points.insert(follower_stored_map_.end(), follower_active_map_.points.begin(), follower_active_map_.points.end());
-    }
+
+    // stored_mapに追加
+    for(const auto& point : follower_active_map_.points)
+        follower_stored_map_.points.push_back(point);
 }
 
 void CollaborativeVSLAM::follower_map_merge_sign_callback(const std_msgs::Bool::ConstPtr& msg)
@@ -231,7 +214,7 @@ void CollaborativeVSLAM::follower_map_merge_sign_callback(const std_msgs::Bool::
     if(msg->data)
     {
         co_flag_tf_map_origin_ = false;
-        follower_lost_count_ = 0;
+        follower_.lost_count = 0;
         follower_stored_map_.points.clear();
     }
 }
@@ -247,7 +230,7 @@ void CollaborativeVSLAM::follower_active_map_callback(const sensor_msgs::PointCl
     if(msg->data.size() != 0)
     {
         pcl::fromROSMsg(*msg, follower_active_map_);
-        follower_flag_tf_map_ = false;
+        follower_.flag_tf_map = false;
     }
 }
 
@@ -256,7 +239,7 @@ void CollaborativeVSLAM::follower_relative_pos_callback(const object_detector_ms
     // yoloの結果を取得
     follower_relative_pos_set_.object_position.clear();
     for(const auto& obj : msg->object_position)
-        if(obj.Class == "roomba")
+        if(obj.Class == "roomba" and not std::isnan(obj.x))
             follower_relative_pos_set_.object_position.push_back(obj);
 
     // 同時に複数のRoombaが検出された場合の対策
@@ -318,7 +301,7 @@ void CollaborativeVSLAM::co_vslam()
 
 bool CollaborativeVSLAM::can_set_tf_for_map()
 {
-    return leader_flag_init_ratio_ and follower_flag_init_ratio_ and not co_flag_tf_map_origin_;
+    return leader_.flag_init_ratio and follower_.flag_init_ratio and not co_flag_tf_map_origin_;
 }
 
 void CollaborativeVSLAM::set_tf_for_map()
@@ -351,22 +334,22 @@ double CollaborativeVSLAM::getPitch(geometry_msgs::PoseStamped& pose_msg)
 
 Point CollaborativeVSLAM::adjust_follower_scale_to_leader(const Point point)
 {
-    return adjust_scale_to_leader(point) / follower_scale_ratio_;
+    return adjust_scale_to_leader(point) / follower_.scale_ratio;
 }
 
 Point CollaborativeVSLAM::adjust_leader_scale_to_follower(const Point point)
 {
-    return adjust_scale_to_follower(point) / leader_scale_ratio_;
+    return adjust_scale_to_follower(point) / leader_.scale_ratio;
 }
 
 Point CollaborativeVSLAM::adjust_scale_to_leader(const Point point)
 {
-    return point * leader_scale_ratio_;
+    return point * leader_.scale_ratio;
 }
 
 Point CollaborativeVSLAM::adjust_scale_to_follower(const Point point)
 {
-    return point * follower_scale_ratio_;
+    return point * follower_.scale_ratio;
 }
 
 Point CollaborativeVSLAM::rotate_pitch(const object_detector_msgs::ObjectPosition& input_point, const double pitch)
@@ -398,10 +381,10 @@ void CollaborativeVSLAM::co_localize()
     // leader
     calc_leader_pose();
     leader_co_pose_.header.stamp = ros::Time::now();
-    // leader_co_pose_.header.frame_id = map_frame_id_;
     leader_pose_pub_.publish(leader_co_pose_);
     // follower
     calc_follower_pose();
+    follower_co_pose_.header.stamp = ros::Time::now();
     follower_pose_pub_.publish(follower_co_pose_);
 }
 
@@ -412,9 +395,9 @@ void CollaborativeVSLAM::calc_leader_pose()
     calc_leader_pose_from_follower_in_leader_map();
 
     // leader poseを決定
-    if(leader_flag_lost_.data) // ロスト中
+    if(leader_.flag_lost) // ロスト中
         leader_co_pose_ = leader_pose_from_follower_;
-    else if(leader_lost_count_ > 0) // 復帰後
+    else if(leader_.lost_count > 0) // 復帰後
         calc_leader_pose_after_return();
     else // ロスト前
         leader_co_pose_ = leader_pose_;
@@ -452,7 +435,7 @@ void CollaborativeVSLAM::calc_follower_pose_in_leader_map()
 void CollaborativeVSLAM::calc_leader_pos_from_follower_in_leader_map()
 {
     const Point  follower_pos(follower_pose_in_leader_map_.pose.position);
-    const double follower_pitch = getPitch(follower_pose_in_leader_map_.pose.orientation);
+    const double follower_pitch = getPitch(follower_pose_in_leader_map_);
     const Point  relative_pos   = rotate_pitch(follower_relative_pos_, follower_pitch);
     Point leader_pos = follower_pos + adjust_scale_to_leader(relative_pos);
 
@@ -462,13 +445,18 @@ void CollaborativeVSLAM::calc_leader_pos_from_follower_in_leader_map()
 // [相対観測] followerから見たleader quat (in leader map)の算出
 void CollaborativeVSLAM::calc_leader_quat_from_follower_in_leader_map(geometry_msgs::Quaternion& leader_quat_msg)
 {
-    const double follower_pitch = getPitch(follower_pose_in_leader_map_.pose.orientation);
+    const double follower_pitch = getPitch(follower_pose_in_leader_map_);
     const double leader_x_from_follower = follower_relative_pos_.x;
     const double leader_z_from_follower = follower_relative_pos_.z;
     double leader_pitch = M_PI + follower_pitch + leader_relative_angle_.radian
         + atan2(leader_x_from_follower, leader_z_from_follower);
 
-    leader_pitch = calc_normalized_angle(leader_pitch);
+    if(leader_.flag_lost) // ロスト中
+        leader_pitch = calc_normalized_angle(leader_pitch);
+    else if(leader_.lost_count > 0) // 復帰後
+        leader_pitch = calc_normalized_angle(leader_pitch + getPitch(leader_pose_on_return_));
+    else // ロスト前
+        leader_pitch = calc_normalized_angle(leader_pitch);
 
     // pitchからquaternionを算出
     tf::Quaternion leader_quat;
@@ -488,14 +476,14 @@ void  CollaborativeVSLAM::calc_leader_pose_after_return()
 
 Point CollaborativeVSLAM::calc_pos_after_leader_return(const geometry_msgs::Point input_point)
 {
-    const double map_origin_pitch = getPitch(leader_pose_on_return_.pose.orientation);
+    const double map_origin_pitch = getPitch(leader_pose_on_return_);
     const Point  rotated_pos      = rotate_pitch(input_point, map_origin_pitch);
 
     return Point(leader_pose_on_return_) + rotated_pos;
 }
 void CollaborativeVSLAM::calc_pos_after_leader_return(pcl::PointXYZ& target_point)
 {
-    const double map_origin_pitch = getPitch(leader_pose_on_return_.pose.orientation);
+    const double map_origin_pitch = getPitch(leader_pose_on_return_);
     const Point  rotated_pos      = rotate_pitch(target_point, map_origin_pitch);
     Point output_point = Point(leader_pose_on_return_) + rotated_pos;
 
@@ -510,9 +498,9 @@ void CollaborativeVSLAM::calc_follower_pose()
     calc_follower_pose_from_leader_in_follower_map();
 
     // follower poseを決定
-    if(follower_flag_lost_.data) // ロスト中
+    if(follower_.flag_lost) // ロスト中
         follower_co_pose_ = follower_pose_from_leader_;
-    else if(follower_lost_count_ > 0) // 復帰後
+    else if(follower_.lost_count > 0) // 復帰後
         calc_follower_pose_after_return();
     else // ロスト前
         follower_co_pose_ = follower_pose_;
@@ -551,7 +539,7 @@ void CollaborativeVSLAM::calc_leader_pose_in_follower_map()
 void CollaborativeVSLAM::calc_follower_pos_from_leader_in_follower_map()
 {
     const Point  leader_pos(leader_pose_in_follower_map_.pose.position);
-    const double leader_pitch = getPitch(leader_pose_in_follower_map_.pose.orientation);
+    const double leader_pitch = getPitch(leader_pose_in_follower_map_);
     const double tmp_radian   = leader_pitch - leader_relative_angle_.radian;
     const double dist_F_to_L  = calc_hypot(follower_relative_pos_);
     const Point  relative_pos(dist_F_to_L*sin(tmp_radian), dist_F_to_L*cos(tmp_radian)); // Point(x,z);
@@ -563,13 +551,18 @@ void CollaborativeVSLAM::calc_follower_pos_from_leader_in_follower_map()
 // [相対観測] leaderから見たfollower quat (in follower map)の算出
 void CollaborativeVSLAM::calc_follower_quat_from_leader_in_follower_map(geometry_msgs::Quaternion& follower_quat_msg)
 {
-    const double leader_pitch = getPitch(leader_pose_in_follower_map_.pose.orientation);
+    const double leader_pitch = getPitch(leader_pose_in_follower_map_);
     const double leader_x_from_follower = follower_relative_pos_.x;
     const double leader_z_from_follower = follower_relative_pos_.z;
     double follower_pitch = -M_PI + leader_pitch - leader_relative_angle_.radian
         - atan2(leader_x_from_follower, leader_z_from_follower);
 
-    follower_pitch = calc_normalized_angle(follower_pitch);
+    if(follower_.flag_lost) // ロスト中
+        follower_pitch = calc_normalized_angle(follower_pitch);
+    else if(follower_.lost_count > 0) // 復帰後
+        follower_pitch = calc_normalized_angle(follower_pitch + getPitch(follower_pose_on_return_));
+    else // ロスト前
+        follower_pitch = calc_normalized_angle(follower_pitch);
 
     // pitchからquaternionを算出
     tf::Quaternion follower_quat;
@@ -589,14 +582,14 @@ void CollaborativeVSLAM::calc_follower_pose_after_return()
 
 Point CollaborativeVSLAM::calc_pos_after_follower_return(const geometry_msgs::Point input_point)
 {
-    const double map_origin_pitch = getPitch(follower_pose_on_return_.pose.orientation);
+    const double map_origin_pitch = getPitch(follower_pose_on_return_);
     const Point  rotated_pos      = rotate_pitch(input_point, map_origin_pitch);
 
     return Point(follower_pose_on_return_) + rotated_pos;
 }
 void CollaborativeVSLAM::calc_pos_after_follower_return(pcl::PointXYZ& target_point)
 {
-    const double map_origin_pitch = getPitch(follower_pose_on_return_.pose.orientation);
+    const double map_origin_pitch = getPitch(follower_pose_on_return_);
     const Point  rotated_pos      = rotate_pitch(target_point, map_origin_pitch);
     Point output_point = Point(follower_pose_on_return_) + rotated_pos;
 
@@ -635,9 +628,9 @@ void CollaborativeVSLAM::co_mapping()
 // leader mapの算出(+pub)
 void CollaborativeVSLAM::calc_leader_map()
 {
-    if(leader_flag_lost_.data) // ロスト中
+    if(leader_.flag_lost) // ロスト中
         leader_map_pub_.publish(leader_stored_map_);
-    else if(leader_lost_count_ > 0) // 復帰後
+    else if(leader_.lost_count > 0) // 復帰後
         calc_leader_map_after_return();
     else // ロスト前
         leader_map_pub_.publish(leader_active_map_);
@@ -652,8 +645,6 @@ void CollaborativeVSLAM::calc_leader_map_after_return()
     const int point_size = leader_stored_map_.points.size() + leader_active_map_.points.size(); // 必要dataサイズ
     pcl::PointCloud<pcl::PointXYZ> tmp_map;
     tmp_map.points.reserve(point_size + 10); // dataサイズの確保
-    // tmp_map = leader_stored_map_;
-    // tmp_map.points.insert(tmp_map.points.end(), leader_active_map_.points.begin(), leader_active_map_.points.end()); // 結合
     for(const auto& point : leader_stored_map_.points) tmp_map.points.push_back(point);
     for(const auto& point : leader_active_map_.points) tmp_map.points.push_back(point);
     // publish
@@ -664,19 +655,19 @@ void CollaborativeVSLAM::calc_leader_map_after_return()
 // 復帰した地点をベースにmappointsをTF
 void CollaborativeVSLAM::tf_leader_active_map()
 {
-    if(leader_flag_tf_map_) return;
+    if(leader_.flag_tf_map) return;
 
     for(auto& point : leader_active_map_.points)
         calc_pos_after_leader_return(point);
-    leader_flag_tf_map_ = true;
+    leader_.flag_tf_map = true;
 }
 
 // follower mapの算出(+pub)
 void CollaborativeVSLAM::calc_follower_map()
 {
-    if(follower_flag_lost_.data) // ロスト中
-        return;
-    else if(follower_lost_count_ > 0) // 復帰後
+    if(follower_.flag_lost) // ロスト中
+        follower_map_pub_.publish(follower_stored_map_);
+    else if(follower_.lost_count > 0) // 復帰後
         calc_follower_map_after_return();
     else // ロスト前
         follower_map_pub_.publish(follower_active_map_);
@@ -691,8 +682,8 @@ void CollaborativeVSLAM::calc_follower_map_after_return()
     const int point_size = follower_stored_map_.points.size() + follower_active_map_.points.size(); // 必要dataサイズ
     pcl::PointCloud<pcl::PointXYZ> tmp_map;
     tmp_map.points.reserve(point_size + 10); // dataサイズの確保
-    tmp_map = follower_stored_map_;
-    tmp_map.points.insert(tmp_map.points.end(), follower_active_map_.points.begin(), follower_active_map_.points.end()); // 結合
+    for(const auto& point : follower_stored_map_.points) tmp_map.points.push_back(point);
+    for(const auto& point : follower_active_map_.points) tmp_map.points.push_back(point);
     // publish
     tmp_map.header.frame_id = map_frame_id_;
     follower_map_pub_.publish(tmp_map);
@@ -701,9 +692,9 @@ void CollaborativeVSLAM::calc_follower_map_after_return()
 // 復帰した地点をベースにmappointsをTF
 void CollaborativeVSLAM::tf_follower_active_map()
 {
-    if(follower_flag_tf_map_) return;
+    if(follower_.flag_tf_map) return;
 
     for(auto& point : follower_active_map_.points)
         calc_pos_after_follower_return(point);
-    follower_flag_tf_map_ = true;
+    follower_.flag_tf_map = true;
 }
