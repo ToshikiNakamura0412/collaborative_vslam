@@ -16,15 +16,24 @@
     </node>
 
     <!-- image_transport -->
-    <arg name="image_raw_topic" default="/theta_s/image_raw" />
+    <arg name="image_raw_topic"       default="/theta_s/image_raw" />
+    <arg name="equirectangular_topic" default="/equirectangular/image_raw" />
     <node pkg="image_transport" type="republish" name="$(arg roomba)_theta_s_republish" args="compressed raw" >
         <remap from="in"  to="$(arg roomba)/$(arg image_raw_topic)" />
         <remap from="out" to="$(arg roomba)/$(arg image_raw_topic)" />
+    </node>
+    <node pkg="image_transport" type="republish" name="$(arg roomba)_equirectangular_republish" args="compressed raw" >
+        <remap from="in"  to="$(arg equirectangular_topic)" />
+        <remap from="out" to="$(arg roomba)/$(arg equirectangular_topic)" />
     </node>
 
     <!-- theta_s_ros -->
     <node pkg="theta_s_ros" type="image_converter" name="$(arg roomba)_theta_s_converter" >
         <remap from="/camera/image_raw" to="$(arg roomba)/$(arg image_raw_topic)" />
         <remap from="/equirectangular/image_raw" to="$(arg roomba)/equirectangular/image_raw" />
+        <rosparam>
+            crop_y: [145, 475]
+            unmerge_top_and_bottom: true
+        </rosparam>
     </node>
 </launch>

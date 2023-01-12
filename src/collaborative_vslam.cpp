@@ -448,7 +448,8 @@ void CollaborativeVSLAM::calc_leader_quat_from_follower_in_leader_map(geometry_m
     const double follower_pitch = getPitch(follower_pose_in_leader_map_);
     const double leader_x_from_follower = follower_relative_pos_.x;
     const double leader_z_from_follower = follower_relative_pos_.z;
-    double leader_pitch = M_PI + follower_pitch + leader_relative_angle_.radian
+    // double leader_pitch = M_PI + follower_pitch + leader_relative_angle_.radian
+    double leader_pitch = M_PI + follower_pitch - leader_relative_angle_.radian
         + atan2(leader_x_from_follower, leader_z_from_follower);
 
     if(leader_.flag_lost) // ロスト中
@@ -540,7 +541,8 @@ void CollaborativeVSLAM::calc_follower_pos_from_leader_in_follower_map()
 {
     const Point  leader_pos(leader_pose_in_follower_map_.pose.position);
     const double leader_pitch = getPitch(leader_pose_in_follower_map_);
-    const double tmp_radian   = leader_pitch - leader_relative_angle_.radian;
+    // const double tmp_radian   = leader_pitch - leader_relative_angle_.radian;
+    const double tmp_radian   = leader_pitch + leader_relative_angle_.radian;
     const double dist_F_to_L  = calc_hypot(follower_relative_pos_);
     const Point  relative_pos(dist_F_to_L*sin(tmp_radian), dist_F_to_L*cos(tmp_radian)); // Point(x,z);
     Point follower_pos = leader_pos + adjust_scale_to_follower(relative_pos);
@@ -554,7 +556,8 @@ void CollaborativeVSLAM::calc_follower_quat_from_leader_in_follower_map(geometry
     const double leader_pitch = getPitch(leader_pose_in_follower_map_);
     const double leader_x_from_follower = follower_relative_pos_.x;
     const double leader_z_from_follower = follower_relative_pos_.z;
-    double follower_pitch = -M_PI + leader_pitch - leader_relative_angle_.radian
+    // double follower_pitch = -M_PI + leader_pitch - leader_relative_angle_.radian
+    double follower_pitch = -M_PI + leader_pitch + leader_relative_angle_.radian
         - atan2(leader_x_from_follower, leader_z_from_follower);
 
     if(follower_.flag_lost) // ロスト中
