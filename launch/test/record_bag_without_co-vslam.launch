@@ -20,6 +20,7 @@
         /$(arg leader)/orb_slam3/merge_sign
         /$(arg leader)/orb_slam3/camera_pose
         /$(arg leader)/orb_slam3/all_mappoints
+        /$(arg leader)/orb_slam3/match_point_num
         /$(arg leader)/target/angle
         /$(arg leader)/roomba/odometry
         /$(arg follower)/scale_ratio
