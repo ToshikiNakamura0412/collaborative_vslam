@@ -29,6 +29,7 @@
         /$(arg follower)/orb_slam3/merge_sign
         /$(arg follower)/orb_slam3/camera_pose
         /$(arg follower)/orb_slam3/all_mappoints
+        /$(arg follower)/orb_slam3/match_point_num
         /$(arg follower)/object_positions
         /$(arg follower)/roomba/odometry"/>
 </launch>

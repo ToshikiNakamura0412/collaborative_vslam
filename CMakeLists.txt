@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
     sensor_msgs
     geometry_msgs
     tf
+    tf2
     cv_bridge
     pcl_ros
     darknet_ros_msgs

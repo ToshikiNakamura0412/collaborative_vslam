@@ -93,7 +93,9 @@ void CollaborativeVSLAM::leader_init_visual_sign_callback(const std_msgs::Bool::
     if(leader_.flag_init_visual)
     {
         ROS_INFO_STREAM("leader start tracking!!");
-        leader_pose_on_return_  = leader_co_pose_;
+        // leader_pose_on_return_  = leader_co_pose_;
+        // leader_pose_on_return_  = leader_pose_from_follower_;
+        std::cout << "pitch_on_return = " << getPitch(leader_pose_on_return_) << std::endl;
         co_flag_tf_map_origin_  = false;
         leader_.flag_init_ratio = false;
     }
@@ -141,6 +143,10 @@ void CollaborativeVSLAM::leader_map_merge_sign_callback(const std_msgs::Bool::Co
 void CollaborativeVSLAM::leader_pose_callback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
     if(calc_hypot(*msg) > 1e-6) leader_pose_ = *msg;
+    // ROS_INFO_STREAM(*msg);
+    // ROS_INFO_STREAM(leader_pose_);
+    // std::cout << "original_l_pitch = " << getPitch(leader_pose_) << std::endl;
+    double tmp = getPitch(leader_pose_);
 }
 
 void CollaborativeVSLAM::leader_active_map_callback(const sensor_msgs::PointCloud2ConstPtr& msg)
@@ -260,6 +266,7 @@ void CollaborativeVSLAM::follower_map_merge_sign_callback(const std_msgs::Bool::
 void CollaborativeVSLAM::follower_pose_callback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
     if(calc_hypot(*msg) > 1e-6) follower_pose_ = *msg;
+    std::cout << "f_pose_pitch = " << getPitch(follower_pose_) << std::endl << std::endl;
 }
 
 void CollaborativeVSLAM::follower_active_map_callback(const sensor_msgs::PointCloud2ConstPtr& msg)
@@ -360,9 +367,25 @@ void CollaborativeVSLAM::set_tf_for_map()
 double CollaborativeVSLAM::getPitch(geometry_msgs::Quaternion& quat_msg)
 {
     double r, p, y;
-    tf::Quaternion quat(quat_msg.x, quat_msg.y, quat_msg.z, quat_msg.w);
-    tf::Matrix3x3(quat).getRPY(r, p, y);
+    tf2::getEulerYPR(quat_msg, y, p, r);
+    // std::cout << "----" << std::endl;
+    // std::cout << "y = " << y << std::endl;
+    // std::cout << "p = " << p << std::endl;
+    // std::cout << "r = " << r << std::endl << std::endl;
+    if(M_PI/2.0 < abs(y) and M_PI/2.0 < abs(r))
+    {
+        if(0.0 <= p)
+            p = M_PI - p;
+        else
+            p = -M_PI -p;
+    }
+    // tf::Quaternion quat(quat_msg.x, quat_msg.y, quat_msg.z, quat_msg.w);
+    // tf::Matrix3x3(quat).getRPY(r, p, y);
+    // tf::Quaternion quat;
+    // quaternionMsgToTF(quat_msg, quat);
+    // tf::Matrix3x3(quat).getRPY(r, p, y);
 
+    // std::cout << "Pitch = " << p << std::endl << std::endl;
     return p;
 }
 double CollaborativeVSLAM::getPitch(geometry_msgs::PoseStamped& pose_msg)
@@ -431,15 +454,22 @@ void CollaborativeVSLAM::co_localize()
 void CollaborativeVSLAM::calc_leader_pose()
 {
     // followerから見たleader pose (in leader map)
-    calc_leader_pose_from_follower_in_leader_map();
 
     // leader poseを決定
     if(leader_.flag_lost) // ロスト中
+    {
+        calc_leader_pose_from_follower_in_leader_map();
         leader_co_pose_ = leader_pose_from_follower_;
+        std::cout << "co_pitch = " << getPitch(leader_co_pose_) << std::endl;
+    }
     else if(leader_.lost_count > 0) // 復帰後
+    {
         calc_leader_pose_after_return();
+    }
     else // ロスト前
+    {
         leader_co_pose_ = leader_pose_;
+    }
 }
 
 // followerから見たleader pose (in leader map)
@@ -492,16 +522,30 @@ void CollaborativeVSLAM::calc_leader_quat_from_follower_in_leader_map(geometry_m
         + atan2(leader_x_from_follower, leader_z_from_follower);
 
     if(leader_.flag_lost) // ロスト中
+    {
         leader_pitch = calc_normalized_angle(leader_pitch);
+        std::cout << "leader_pitch = " << leader_pitch << std::endl;
+        set_orientation(leader_pose_from_follower_, leader_pitch);
+        leader_pose_on_return_  = leader_pose_from_follower_;
+        std::cout << "leader_pitch_frome_follower = " << getPitch(leader_pose_from_follower_) << std::endl;
+        // leader_pose_on_return_  = leader_co_pose_;
+    }
     else if(leader_.lost_count > 0) // 復帰後
+    {
         leader_pitch = calc_normalized_angle(leader_pitch + getPitch(leader_pose_on_return_));
+        set_orientation(leader_pose_from_follower_, leader_pitch);
+        // std::cout << "!!!leader_pitch = " << leader_pitch << std::endl;
+    }
     else // ロスト前
+    {
         leader_pitch = calc_normalized_angle(leader_pitch);
+        set_orientation(leader_pose_from_follower_, leader_pitch);
+    }
 
     // pitchからquaternionを算出
-    tf::Quaternion leader_quat;
-    leader_quat.setRPY(0, leader_pitch, 0);
-    tf::quaternionTFToMsg(leader_quat, leader_quat_msg);
+    // tf::Quaternion leader_quat;
+    // leader_quat.setRPY(0, leader_pitch, 0);
+    // tf::quaternionTFToMsg(leader_quat, leader_quat_msg);
 }
 
 void  CollaborativeVSLAM::calc_leader_pose_after_return()
@@ -510,20 +554,30 @@ void  CollaborativeVSLAM::calc_leader_pose_after_return()
     Point leader_pos = calc_pos_after_leader_return(leader_pose_.pose.position);
     leader_pos.output(leader_co_pose_);
     // orientationの決定
-    const double leader_pitch = getPitch(leader_pose_on_return_) + getPitch(leader_pose_) - M_PI/2.0;
+    // const double leader_pitch = getPitch(leader_pose_on_return_) + getPitch(leader_pose_) - M_PI/2.0;
+    const double leader_pitch = calc_normalized_angle(getPitch(leader_pose_on_return_) + getPitch(leader_pose_));
+    // std::cout << "---" << std::endl;
+    // std::cout << "leader_pitch_on_return = " << getPitch(leader_pose_on_return_) << std::endl;
+    // std::cout << "leader_pitch           = " << getPitch(leader_pose_) << std::endl;
+    // std::cout << "leader_pitch_collab    = " << leader_pitch << std::endl;
     set_orientation(leader_co_pose_, leader_pitch);
+    // std::cout << "leader_pitch_collab!   = " << getPitch(leader_co_pose_) << std::endl << std::endl;
 }
 
 Point CollaborativeVSLAM::calc_pos_after_leader_return(const geometry_msgs::Point input_point)
 {
-    const double map_origin_pitch = getPitch(leader_pose_on_return_) - M_PI/2.0;
+    // const double map_origin_pitch = getPitch(leader_pose_on_return_) - M_PI/2.0;
+    const double map_origin_pitch = getPitch(leader_pose_on_return_);
+    // std::cout << "---" << std::endl;
+    // std::cout << "tf->origin_pitch = " << map_origin_pitch << std::endl << std::endl;
     const Point  rotated_pos      = rotate_pitch(input_point, map_origin_pitch);
 
     return Point(leader_pose_on_return_) + rotated_pos;
 }
 void CollaborativeVSLAM::calc_pos_after_leader_return(pcl::PointXYZ& target_point)
 {
-    const double map_origin_pitch = getPitch(leader_pose_on_return_) - M_PI/2.0;
+    // const double map_origin_pitch = getPitch(leader_pose_on_return_) - M_PI/2.0;
+    const double map_origin_pitch = getPitch(leader_pose_on_return_);
     const Point  rotated_pos      = rotate_pitch(target_point, map_origin_pitch);
     Point output_point = Point(leader_pose_on_return_) + rotated_pos;
 
@@ -641,11 +695,18 @@ void CollaborativeVSLAM::calc_pos_after_follower_return(pcl::PointXYZ& target_po
 // poseのorientationを設定
 void CollaborativeVSLAM::set_orientation(geometry_msgs::PoseStamped& pose, const double pitch)
 {
-    const double normalized_pitch = calc_normalized_angle(pitch);
+    // std::cout << "=== set_orient ===" << std::endl;
+    // std::cout << "pitch = " << pitch << std::endl;
+    double normalized_pitch = calc_normalized_angle(pitch);
+    // if(normalized_pitch < -M_PI/2.0)
+    //     normalized_pitch = -(M_PI + normalized_pitch);
+    // std::cout << "pitch = " << normalized_pitch << std::endl;
+    // std::cout << "=== " << std::endl << std::endl;
 
     // pitchからquaternionを算出
-    tf::Quaternion quat;
-    quat.setRPY(0, normalized_pitch, 0);
+    tf::Quaternion quat=tf::createQuaternionFromRPY(0,normalized_pitch,0);
+    // tf::Quaternion quat;
+    // quat.setRPY(0, normalized_pitch, 0);
     tf::quaternionTFToMsg(quat, pose.pose.orientation);
 }
 
