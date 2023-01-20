@@ -44,6 +44,8 @@ CollaborativeVSLAM::CollaborativeVSLAM():private_nh_("~")
     follower_pose_in_leader_map_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/leader/follower_pose", 1);
     follower_map_pub_                = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/follower/collaborative_map", 10);
 
+    leader_pose_on_return_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/leader_pose_on_return", 1);
+    leader_pose_on_return_.header.frame_id   = map_frame_id_;
 
     // ----- 基本設定 -----
     // Frame IDの設定
@@ -151,11 +153,47 @@ void CollaborativeVSLAM::leader_active_map_callback(const sensor_msgs::PointClou
     }
 }
 
+bool CollaborativeVSLAM::judge_angle(double angle)
+{
+    if(angle < 0) angle = 2.0*M_PI+angle;
+
+    if(leader_relative_angle_log_.size() >= 20)
+    {
+        double sum = 0.0;
+        for(const auto& angle : leader_relative_angle_log_) sum += angle;
+        const double avg = sum/leader_relative_angle_log_.size();
+        if(avg-M_PI/2.0 <= angle and angle <= avg+M_PI/2.0)
+        {
+            leader_relative_angle_log_.push_back(angle);
+
+            while(leader_relative_angle_log_.size() > 20)
+                leader_relative_angle_log_.erase(leader_relative_angle_log_.begin());
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else
+    {
+        leader_relative_angle_log_.push_back(angle);
+        return true;
+    }
+}
+
 void CollaborativeVSLAM::leader_relative_angle_callback(const color_detector_msgs::TargetAngleList::ConstPtr& msg)
 {
+    // for(const auto& angle : msg->data)
+    //     if(angle.color == "blue" and not std::isnan(angle.radian))
+    //         leader_relative_angle_ = angle;
     for(const auto& angle : msg->data)
+    {
         if(angle.color == "blue" and not std::isnan(angle.radian))
-            leader_relative_angle_ = angle;
+        {
+            if(judge_angle(angle.radian)) leader_relative_angle_ = angle;
+        }
+    }
 }
 
 
@@ -382,6 +420,7 @@ void CollaborativeVSLAM::co_localize()
     calc_leader_pose();
     leader_co_pose_.header.stamp = ros::Time::now();
     leader_pose_pub_.publish(leader_co_pose_);
+    leader_pose_on_return_pub_.publish(leader_pose_on_return_);
     // follower
     calc_follower_pose();
     follower_co_pose_.header.stamp = ros::Time::now();
@@ -471,20 +510,20 @@ void  CollaborativeVSLAM::calc_leader_pose_after_return()
     Point leader_pos = calc_pos_after_leader_return(leader_pose_.pose.position);
     leader_pos.output(leader_co_pose_);
     // orientationの決定
-    const double leader_pitch = getPitch(leader_pose_on_return_) + getPitch(leader_pose_);
+    const double leader_pitch = getPitch(leader_pose_on_return_) + getPitch(leader_pose_) - M_PI/2.0;
     set_orientation(leader_co_pose_, leader_pitch);
 }
 
 Point CollaborativeVSLAM::calc_pos_after_leader_return(const geometry_msgs::Point input_point)
 {
-    const double map_origin_pitch = getPitch(leader_pose_on_return_);
+    const double map_origin_pitch = getPitch(leader_pose_on_return_) - M_PI/2.0;
     const Point  rotated_pos      = rotate_pitch(input_point, map_origin_pitch);
 
     return Point(leader_pose_on_return_) + rotated_pos;
 }
 void CollaborativeVSLAM::calc_pos_after_leader_return(pcl::PointXYZ& target_point)
 {
-    const double map_origin_pitch = getPitch(leader_pose_on_return_);
+    const double map_origin_pitch = getPitch(leader_pose_on_return_) - M_PI/2.0;
     const Point  rotated_pos      = rotate_pitch(target_point, map_origin_pitch);
     Point output_point = Point(leader_pose_on_return_) + rotated_pos;
 

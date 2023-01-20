@@ -102,6 +102,7 @@ private:
 
     // - other function
     void   set_orientation(geometry_msgs::PoseStamped& pose, const double pitch);
+    bool   judge_angle(double angle);
     double getPitch(geometry_msgs::Quaternion& quat_msg);
     double getPitch(geometry_msgs::PoseStamped& pose_msg);
     double calc_hypot(const object_detector_msgs::ObjectPosition obj1, const object_detector_msgs::ObjectPosition obj2);
@@ -144,6 +145,7 @@ private:
     pcl::PointCloud<pcl::PointXYZ>   leader_active_map_;
     pcl::PointCloud<pcl::PointXYZ>   leader_stored_map_;
     color_detector_msgs::TargetAngle leader_relative_angle_;
+    std::vector<double>              leader_relative_angle_log_;
     // collaborative
     geometry_msgs::PoseStamped leader_co_pose_;
     geometry_msgs::PoseStamped leader_pose_on_return_;
@@ -195,6 +197,7 @@ private:
     ros::Publisher leader_pose_from_follower_pub_;
     ros::Publisher leader_pose_in_follower_map_pub_;
     ros::Publisher leader_map_pub_;
+    ros::Publisher leader_pose_on_return_pub_;
     // for follower robot
     ros::Publisher follower_pose_pub_;
     ros::Publisher follower_pose_from_leader_pub_;
