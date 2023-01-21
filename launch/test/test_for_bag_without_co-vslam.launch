@@ -23,8 +23,8 @@
     </include>
 
     <!-- Visualization - RViz-->
-    <node pkg="rviz" type="rviz" name="co_leader_rviz" args="-d $(find collaborative_vslam)/config/rviz/test_for_bag_without_co-vslam.rviz" output="screen"/>
-    <!-- <node pkg="rviz" type="rviz" name="leader_rviz" args="-d $(find collaborative_vslam)/config/rviz/leader_orb_slam.rviz" output="screen"/> -->
+    <node pkg="rviz" type="rviz" name="co_leader_rviz" args="-d $(find collaborative_vslam)/config/rviz/test_for_bag_without_co-vslam_leader.rviz" output="screen"/>
+    <node pkg="rviz" type="rviz" name="co_follower_rviz" args="-d $(find collaborative_vslam)/config/rviz/test_for_bag_without_co-vslam_follower.rviz" output="screen"/>
 
     <!-- bag play -->
     <!-- <arg name="bag_file_path" default="$(env HOME)/bagfiles/bagfiles_without_co-vslam/test_without_co-vslam_2023-01-20-15-54-37-plan2-1.bag"/> -->

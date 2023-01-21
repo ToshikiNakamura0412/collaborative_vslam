@@ -90,7 +90,7 @@ private:
     void  calc_leader_pose_in_follower_map();
     void  calc_follower_pose_from_leader_in_follower_map();
     void  calc_follower_pos_from_leader_in_follower_map();
-    void  calc_follower_quat_from_leader_in_follower_map(geometry_msgs::Quaternion& follower_quat_msg);
+    void  calc_follower_quat_from_leader_in_follower_map();
     void  calc_follower_pose_after_return();
     void  calc_pos_after_follower_return(pcl::PointXYZ& target_point);
     Point calc_pos_after_follower_return(const geometry_msgs::Point input_point);
@@ -130,6 +130,7 @@ private:
     bool co_flag_lost_leader_;
     bool co_flag_lost_follower_;
     geometry_msgs::PointStamped co_map_origin_;
+    geometry_msgs::PointStamped co_map_origin_for_follower_;
 
     // for leader robote
     SlamState leader_;
@@ -193,6 +194,7 @@ private:
     // Publisher
     // for collaborative system
     ros::Publisher co_map_origin_pub_;
+    ros::Publisher co_map_origin_for_follower_pub_;
     // for leader robot
     ros::Publisher leader_pose_pub_;
     ros::Publisher leader_pose_from_follower_pub_;
@@ -204,6 +206,7 @@ private:
     ros::Publisher follower_pose_from_leader_pub_;
     ros::Publisher follower_pose_in_leader_map_pub_;
     ros::Publisher follower_map_pub_;
+    ros::Publisher follower_pose_on_return_pub_;
 };
 
 #endif
