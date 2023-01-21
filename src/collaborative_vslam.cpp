@@ -85,6 +85,8 @@ void CollaborativeVSLAM::process()
 // callback function for leader robot
 void CollaborativeVSLAM::leader_scale_ratio_callback(const std_msgs::Float64::ConstPtr& msg)
 {
+    if(co_flag_tf_map_origin_) return;
+
     leader_.scale_ratio = msg->data;
     leader_.flag_init_ratio = true;
     ROS_INFO_STREAM("leader initialized scale ratio!!");
@@ -197,6 +199,8 @@ void CollaborativeVSLAM::leader_relative_angle_callback(const color_detector_msg
 // callback function for follower robot
 void CollaborativeVSLAM::follower_scale_ratio_callback(const std_msgs::Float64::ConstPtr& msg)
 {
+    if(co_flag_tf_map_origin_) return;
+
     follower_.scale_ratio = msg->data;
     follower_.flag_init_ratio = true;
     ROS_INFO_STREAM("follower initialized scale ratio!!");
@@ -436,9 +440,8 @@ void CollaborativeVSLAM::co_localize()
 // leader poseの算出
 void CollaborativeVSLAM::calc_leader_pose()
 {
-    calc_leader_pose_from_follower_in_leader_map();
     if(leader_.flag_lost) // ロスト中
-        std::cout << std::endl;
+        calc_leader_pose_from_follower_in_leader_map();
     else if(leader_.lost_count > 0) // 復帰後
         calc_leader_pose_after_return();
     else // ロスト前
