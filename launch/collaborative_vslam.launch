@@ -37,6 +37,6 @@
         <remap from="/follower/collaborative_map"  to="/$(arg follower)/collaborative_map"/>
 
         <!-- parameter -->
-        <param name="/hz" value="20"/>
+        <param name="/hz" value="30"/>
     </node>
 </launch>

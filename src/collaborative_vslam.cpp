@@ -14,16 +14,16 @@ CollaborativeVSLAM::CollaborativeVSLAM():private_nh_("~")
 
     // ----- Subscriber -----
     // from leader robot
-    leader_scale_ratio_sub_      = nh_.subscribe("/leader/scale_ratio", 1, &CollaborativeVSLAM::leader_scale_ratio_callback, this);
-    leader_init_visual_sign_sub_ = nh_.subscribe("/leader/visual_sign", 1, &CollaborativeVSLAM::leader_init_visual_sign_callback, this);
+    leader_scale_ratio_sub_      = nh_.subscribe("/leader/scale_ratio", 1, &CollaborativeVSLAM::leader_scale_ratio_callback, this, ros::TransportHints().reliable().tcpNoDelay());
+    leader_init_visual_sign_sub_ = nh_.subscribe("/leader/visual_sign", 1, &CollaborativeVSLAM::leader_init_visual_sign_callback, this, ros::TransportHints().reliable().tcpNoDelay());
     leader_lost_sign_sub_        = nh_.subscribe("/leader/lost_sign", 1, &CollaborativeVSLAM::leader_lost_sign_callback, this);
     leader_map_merge_sign_sub_   = nh_.subscribe("/leader/map_merge_sign", 1, &CollaborativeVSLAM::leader_map_merge_sign_callback, this);
     leader_pose_sub_             = nh_.subscribe("/leader/pose", 1, &CollaborativeVSLAM::leader_pose_callback, this);
     leader_active_map_sub_       = nh_.subscribe("/leader/active_map", 1, &CollaborativeVSLAM::leader_active_map_callback, this);
     leader_relative_angle_sub_   = nh_.subscribe("/leader/follower_relative_angle", 1, &CollaborativeVSLAM::leader_relative_angle_callback, this);
     // from follower robot
-    follower_scale_ratio_sub_      = nh_.subscribe("/follower/scale_ratio", 1, &CollaborativeVSLAM::follower_scale_ratio_callback, this);
-    follower_init_visual_sign_sub_ = nh_.subscribe("/follower/visual_sign", 1, &CollaborativeVSLAM::follower_init_visual_sign_callback, this);
+    follower_scale_ratio_sub_      = nh_.subscribe("/follower/scale_ratio", 1, &CollaborativeVSLAM::follower_scale_ratio_callback, this, ros::TransportHints().reliable().tcpNoDelay());
+    follower_init_visual_sign_sub_ = nh_.subscribe("/follower/visual_sign", 1, &CollaborativeVSLAM::follower_init_visual_sign_callback, this, ros::TransportHints().reliable().tcpNoDelay());
     follower_lost_sign_sub_        = nh_.subscribe("/follower/lost_sign", 1, &CollaborativeVSLAM::follower_lost_sign_callback, this);
     follower_map_merge_sign_sub_   = nh_.subscribe("/follower/map_merge_sign", 1, &CollaborativeVSLAM::follower_map_merge_sign_callback, this);
     follower_pose_sub_             = nh_.subscribe("/follower/pose", 1, &CollaborativeVSLAM::follower_pose_callback, this);
@@ -36,6 +36,7 @@ CollaborativeVSLAM::CollaborativeVSLAM():private_nh_("~")
     // for leader robot
     leader_pose_pub_                 = nh_.advertise<geometry_msgs::PoseStamped>("/leader/collaborative_pose", 1);
     leader_pose_from_follower_pub_   = nh_.advertise<geometry_msgs::PoseStamped>("/leader/pose_from_follower", 1);
+    leader_pose_on_return_pub_       = nh_.advertise<geometry_msgs::PoseStamped>("/leader_pose_on_return", 1);
     leader_pose_in_follower_map_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/follower/leader_pose", 1);
     leader_map_pub_                  = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/leader/collaborative_map", 10);
     // for follower robot
@@ -44,8 +45,6 @@ CollaborativeVSLAM::CollaborativeVSLAM():private_nh_("~")
     follower_pose_in_leader_map_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/leader/follower_pose", 1);
     follower_map_pub_                = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/follower/collaborative_map", 10);
 
-    leader_pose_on_return_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/leader_pose_on_return", 1);
-    leader_pose_on_return_.header.frame_id   = map_frame_id_;
 
     // ----- 基本設定 -----
     // Frame IDの設定
@@ -54,6 +53,7 @@ CollaborativeVSLAM::CollaborativeVSLAM():private_nh_("~")
     // for leader robot
     leader_pose_.header.frame_id                 = map_frame_id_;
     leader_pose_from_follower_.header.frame_id   = map_frame_id_;
+    leader_pose_on_return_.header.frame_id       = map_frame_id_;
     leader_pose_in_follower_map_.header.frame_id = map_frame_id_;
     leader_active_map_.header.frame_id           = map_frame_id_;
     leader_stored_map_.header.frame_id           = map_frame_id_;
@@ -93,9 +93,7 @@ void CollaborativeVSLAM::leader_init_visual_sign_callback(const std_msgs::Bool::
     if(leader_.flag_init_visual)
     {
         ROS_INFO_STREAM("leader start tracking!!");
-        // leader_pose_on_return_  = leader_co_pose_;
-        // leader_pose_on_return_  = leader_pose_from_follower_;
-        std::cout << "pitch_on_return = " << getPitch(leader_pose_on_return_) << std::endl;
+        leader_pose_on_return_  = leader_pose_from_follower_;
         co_flag_tf_map_origin_  = false;
         leader_.flag_init_ratio = false;
     }
@@ -143,10 +141,6 @@ void CollaborativeVSLAM::leader_map_merge_sign_callback(const std_msgs::Bool::Co
 void CollaborativeVSLAM::leader_pose_callback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
     if(calc_hypot(*msg) > 1e-6) leader_pose_ = *msg;
-    // ROS_INFO_STREAM(*msg);
-    // ROS_INFO_STREAM(leader_pose_);
-    // std::cout << "original_l_pitch = " << getPitch(leader_pose_) << std::endl;
-    double tmp = getPitch(leader_pose_);
 }
 
 void CollaborativeVSLAM::leader_active_map_callback(const sensor_msgs::PointCloud2ConstPtr& msg)
@@ -190,16 +184,9 @@ bool CollaborativeVSLAM::judge_angle(double angle)
 
 void CollaborativeVSLAM::leader_relative_angle_callback(const color_detector_msgs::TargetAngleList::ConstPtr& msg)
 {
-    // for(const auto& angle : msg->data)
-    //     if(angle.color == "blue" and not std::isnan(angle.radian))
-    //         leader_relative_angle_ = angle;
     for(const auto& angle : msg->data)
-    {
-        if(angle.color == "blue" and not std::isnan(angle.radian))
-        {
-            if(judge_angle(angle.radian)) leader_relative_angle_ = angle;
-        }
-    }
+        if(angle.color == "blue" and not std::isnan(angle.radian) and judge_angle(angle.radian))
+            leader_relative_angle_ = angle;
 }
 
 
@@ -266,7 +253,6 @@ void CollaborativeVSLAM::follower_map_merge_sign_callback(const std_msgs::Bool::
 void CollaborativeVSLAM::follower_pose_callback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
     if(calc_hypot(*msg) > 1e-6) follower_pose_ = *msg;
-    std::cout << "f_pose_pitch = " << getPitch(follower_pose_) << std::endl << std::endl;
 }
 
 void CollaborativeVSLAM::follower_active_map_callback(const sensor_msgs::PointCloud2ConstPtr& msg)
@@ -366,26 +352,12 @@ void CollaborativeVSLAM::set_tf_for_map()
 
 double CollaborativeVSLAM::getPitch(geometry_msgs::Quaternion& quat_msg)
 {
-    double r, p, y;
+    double y, p, r;
     tf2::getEulerYPR(quat_msg, y, p, r);
-    // std::cout << "----" << std::endl;
-    // std::cout << "y = " << y << std::endl;
-    // std::cout << "p = " << p << std::endl;
-    // std::cout << "r = " << r << std::endl << std::endl;
-    if(M_PI/2.0 < abs(y) and M_PI/2.0 < abs(r))
-    {
-        if(0.0 <= p)
-            p = M_PI - p;
-        else
-            p = -M_PI -p;
-    }
-    // tf::Quaternion quat(quat_msg.x, quat_msg.y, quat_msg.z, quat_msg.w);
-    // tf::Matrix3x3(quat).getRPY(r, p, y);
-    // tf::Quaternion quat;
-    // quaternionMsgToTF(quat_msg, quat);
-    // tf::Matrix3x3(quat).getRPY(r, p, y);
 
-    // std::cout << "Pitch = " << p << std::endl << std::endl;
+    if(M_PI/2.0 < abs(y) and M_PI/2.0 < abs(r))
+        p = calc_normalized_angle(M_PI-p);
+
     return p;
 }
 double CollaborativeVSLAM::getPitch(geometry_msgs::PoseStamped& pose_msg)
@@ -453,23 +425,12 @@ void CollaborativeVSLAM::co_localize()
 // leader poseの算出
 void CollaborativeVSLAM::calc_leader_pose()
 {
-    // followerから見たleader pose (in leader map)
-
-    // leader poseを決定
     if(leader_.flag_lost) // ロスト中
-    {
         calc_leader_pose_from_follower_in_leader_map();
-        leader_co_pose_ = leader_pose_from_follower_;
-        std::cout << "co_pitch = " << getPitch(leader_co_pose_) << std::endl;
-    }
     else if(leader_.lost_count > 0) // 復帰後
-    {
         calc_leader_pose_after_return();
-    }
     else // ロスト前
-    {
         leader_co_pose_ = leader_pose_;
-    }
 }
 
 // followerから見たleader pose (in leader map)
@@ -483,8 +444,11 @@ void CollaborativeVSLAM::calc_leader_pose_from_follower_in_leader_map()
 
     // followerから見たleader pose (in leader map)
     calc_leader_pos_from_follower_in_leader_map();
-    calc_leader_quat_from_follower_in_leader_map(leader_pose_from_follower_.pose.orientation);
+    calc_leader_quat_from_follower_in_leader_map();
     leader_pose_from_follower_pub_.publish(leader_pose_from_follower_);
+
+    // ロスト中
+    if(leader_.flag_lost) leader_co_pose_ = leader_pose_from_follower_;
 }
 
 // follower pose (in leader map)の算出
@@ -508,44 +472,28 @@ void CollaborativeVSLAM::calc_leader_pos_from_follower_in_leader_map()
     const Point  relative_pos   = rotate_pitch(follower_relative_pos_, follower_pitch);
     Point leader_pos = follower_pos + adjust_scale_to_leader(relative_pos);
 
+    // positionの決定
     leader_pos.output(leader_pose_from_follower_);
 }
 
 // [相対観測] followerから見たleader quat (in leader map)の算出
-void CollaborativeVSLAM::calc_leader_quat_from_follower_in_leader_map(geometry_msgs::Quaternion& leader_quat_msg)
+void CollaborativeVSLAM::calc_leader_quat_from_follower_in_leader_map()
 {
     const double follower_pitch = getPitch(follower_pose_in_leader_map_);
     const double leader_x_from_follower = follower_relative_pos_.x;
     const double leader_z_from_follower = follower_relative_pos_.z;
-    // double leader_pitch = M_PI + follower_pitch + leader_relative_angle_.radian
     double leader_pitch = M_PI + follower_pitch - leader_relative_angle_.radian
         + atan2(leader_x_from_follower, leader_z_from_follower);
 
     if(leader_.flag_lost) // ロスト中
-    {
         leader_pitch = calc_normalized_angle(leader_pitch);
-        std::cout << "leader_pitch = " << leader_pitch << std::endl;
-        set_orientation(leader_pose_from_follower_, leader_pitch);
-        leader_pose_on_return_  = leader_pose_from_follower_;
-        std::cout << "leader_pitch_frome_follower = " << getPitch(leader_pose_from_follower_) << std::endl;
-        // leader_pose_on_return_  = leader_co_pose_;
-    }
     else if(leader_.lost_count > 0) // 復帰後
-    {
         leader_pitch = calc_normalized_angle(leader_pitch + getPitch(leader_pose_on_return_));
-        set_orientation(leader_pose_from_follower_, leader_pitch);
-        // std::cout << "!!!leader_pitch = " << leader_pitch << std::endl;
-    }
     else // ロスト前
-    {
         leader_pitch = calc_normalized_angle(leader_pitch);
-        set_orientation(leader_pose_from_follower_, leader_pitch);
-    }
 
-    // pitchからquaternionを算出
-    // tf::Quaternion leader_quat;
-    // leader_quat.setRPY(0, leader_pitch, 0);
-    // tf::quaternionTFToMsg(leader_quat, leader_quat_msg);
+    // orientationの決定
+    set_orientation(leader_pose_from_follower_, leader_pitch);
 }
 
 void  CollaborativeVSLAM::calc_leader_pose_after_return()
@@ -554,33 +502,24 @@ void  CollaborativeVSLAM::calc_leader_pose_after_return()
     Point leader_pos = calc_pos_after_leader_return(leader_pose_.pose.position);
     leader_pos.output(leader_co_pose_);
     // orientationの決定
-    // const double leader_pitch = getPitch(leader_pose_on_return_) + getPitch(leader_pose_) - M_PI/2.0;
     const double leader_pitch = calc_normalized_angle(getPitch(leader_pose_on_return_) + getPitch(leader_pose_));
-    // std::cout << "---" << std::endl;
-    // std::cout << "leader_pitch_on_return = " << getPitch(leader_pose_on_return_) << std::endl;
-    // std::cout << "leader_pitch           = " << getPitch(leader_pose_) << std::endl;
-    // std::cout << "leader_pitch_collab    = " << leader_pitch << std::endl;
     set_orientation(leader_co_pose_, leader_pitch);
-    // std::cout << "leader_pitch_collab!   = " << getPitch(leader_co_pose_) << std::endl << std::endl;
 }
 
 Point CollaborativeVSLAM::calc_pos_after_leader_return(const geometry_msgs::Point input_point)
 {
-    // const double map_origin_pitch = getPitch(leader_pose_on_return_) - M_PI/2.0;
     const double map_origin_pitch = getPitch(leader_pose_on_return_);
-    // std::cout << "---" << std::endl;
-    // std::cout << "tf->origin_pitch = " << map_origin_pitch << std::endl << std::endl;
     const Point  rotated_pos      = rotate_pitch(input_point, map_origin_pitch);
 
     return Point(leader_pose_on_return_) + rotated_pos;
 }
 void CollaborativeVSLAM::calc_pos_after_leader_return(pcl::PointXYZ& target_point)
 {
-    // const double map_origin_pitch = getPitch(leader_pose_on_return_) - M_PI/2.0;
     const double map_origin_pitch = getPitch(leader_pose_on_return_);
     const Point  rotated_pos      = rotate_pitch(target_point, map_origin_pitch);
     Point output_point = Point(leader_pose_on_return_) + rotated_pos;
 
+    // positionの決定
     output_point.output_xz(target_point);
 }
 
@@ -634,7 +573,6 @@ void CollaborativeVSLAM::calc_follower_pos_from_leader_in_follower_map()
 {
     const Point  leader_pos(leader_pose_in_follower_map_.pose.position);
     const double leader_pitch = getPitch(leader_pose_in_follower_map_);
-    // const double tmp_radian   = leader_pitch - leader_relative_angle_.radian;
     const double tmp_radian   = leader_pitch + leader_relative_angle_.radian;
     const double dist_F_to_L  = calc_hypot(follower_relative_pos_);
     const Point  relative_pos(dist_F_to_L*sin(tmp_radian), dist_F_to_L*cos(tmp_radian)); // Point(x,z);
@@ -649,7 +587,6 @@ void CollaborativeVSLAM::calc_follower_quat_from_leader_in_follower_map(geometry
     const double leader_pitch = getPitch(leader_pose_in_follower_map_);
     const double leader_x_from_follower = follower_relative_pos_.x;
     const double leader_z_from_follower = follower_relative_pos_.z;
-    // double follower_pitch = -M_PI + leader_pitch - leader_relative_angle_.radian
     double follower_pitch = -M_PI + leader_pitch + leader_relative_angle_.radian
         - atan2(leader_x_from_follower, leader_z_from_follower);
 
@@ -695,18 +632,10 @@ void CollaborativeVSLAM::calc_pos_after_follower_return(pcl::PointXYZ& target_po
 // poseのorientationを設定
 void CollaborativeVSLAM::set_orientation(geometry_msgs::PoseStamped& pose, const double pitch)
 {
-    // std::cout << "=== set_orient ===" << std::endl;
-    // std::cout << "pitch = " << pitch << std::endl;
     double normalized_pitch = calc_normalized_angle(pitch);
-    // if(normalized_pitch < -M_PI/2.0)
-    //     normalized_pitch = -(M_PI + normalized_pitch);
-    // std::cout << "pitch = " << normalized_pitch << std::endl;
-    // std::cout << "=== " << std::endl << std::endl;
 
     // pitchからquaternionを算出
     tf::Quaternion quat=tf::createQuaternionFromRPY(0,normalized_pitch,0);
-    // tf::Quaternion quat;
-    // quat.setRPY(0, normalized_pitch, 0);
     tf::quaternionTFToMsg(quat, pose.pose.orientation);
 }
 

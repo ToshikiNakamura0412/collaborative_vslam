@@ -10,8 +10,6 @@
 #include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/Point.h>
 #include <tf/transform_broadcaster.h>
-// #include <tf2/convert.h>
-// #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2/utils.h>
 #include <pcl_ros/point_cloud.h>
 
@@ -76,7 +74,7 @@ private:
     void  calc_follower_pose_in_leader_map();
     void  calc_leader_pose_from_follower_in_leader_map();
     void  calc_leader_pos_from_follower_in_leader_map();
-    void  calc_leader_quat_from_follower_in_leader_map(geometry_msgs::Quaternion& leader_quat_msg);
+    void  calc_leader_quat_from_follower_in_leader_map();
     void  calc_leader_pose_after_return();
     void  calc_pos_after_leader_return(pcl::PointXYZ& target_point);
     Point calc_pos_after_leader_return(const geometry_msgs::Point input_point);

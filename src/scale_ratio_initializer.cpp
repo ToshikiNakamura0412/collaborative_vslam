@@ -13,10 +13,10 @@ ScaleRatioInitializer::ScaleRatioInitializer():private_nh_("~")
     init_flag();
 
     // Subscriber
-    visual_sign_sub_ = nh_.subscribe("/visual_sign", 1, &ScaleRatioInitializer::visual_sign_callback, this);
+    visual_sign_sub_ = nh_.subscribe("/visual_sign", 1, &ScaleRatioInitializer::visual_sign_callback, this, ros::TransportHints().reliable().tcpNoDelay());
     lost_sign_sub_   = nh_.subscribe("/lost_sign", 1, &ScaleRatioInitializer::lost_sign_callback, this);
-    pose_sub_        = nh_.subscribe("/pose", 1, &ScaleRatioInitializer::pose_callback, this);
-    wheel_odom_sub_  = nh_.subscribe("/wheel_odom", 1, &ScaleRatioInitializer::wheel_odom_callback, this);
+    pose_sub_        = nh_.subscribe("/pose", 1, &ScaleRatioInitializer::pose_callback, this, ros::TransportHints().reliable().tcpNoDelay());
+    wheel_odom_sub_  = nh_.subscribe("/wheel_odom", 1, &ScaleRatioInitializer::wheel_odom_callback, this, ros::TransportHints().reliable().tcpNoDelay());
 
     // Publisher
     ratio_pub_ = nh_.advertise<std_msgs::Float64>("/scale_ratio", 1);

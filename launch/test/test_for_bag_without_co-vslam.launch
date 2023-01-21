@@ -27,6 +27,7 @@
     <!-- <node pkg="rviz" type="rviz" name="leader_rviz" args="-d $(find collaborative_vslam)/config/rviz/leader_orb_slam.rviz" output="screen"/> -->
 
     <!-- bag play -->
-    <!-- <arg name="bag_file_path" default="$(env HOME)/bagfiles/test_without_co-vslam_2023-01-08-19-24-09.bag"/> -->
-    <!-- <node pkg="rosbag" type="play" name="rosbag" args="$(arg bag_file_path)"/> -->
+    <!-- <arg name="bag_file_path" default="$(env HOME)/bagfiles/bagfiles_without_co-vslam/test_without_co-vslam_2023-01-20-15-54-37-plan2-1.bag"/> -->
+    <arg name="bag_file_path" default="$(env HOME)/bagfiles/bagfiles_without_co-vslam/test_without_co-vslam_2023-01-20-15-36-10-plan4.bag"/>
+    <node pkg="rosbag" type="play" name="rosbag" args="$(arg bag_file_path)"/>
 </launch>

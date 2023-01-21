@@ -16,7 +16,7 @@
         <remap from="/scale_ratio" to="/$(arg roomba)/scale_ratio"/>
 
         <!-- parameter -->
-        <param name="/hz" value="20"/>
+        <param name="/hz" value="30"/>
         <param name="/accumulation_mode" value="true"/>
         <param name="/scale_ratio_th_percent" value="0.2"/>
         <param name="/duration_time" value="1.0"/>
