@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="follower" default="roomba3"/>
+    <include file="$(find collaborative_vslam)/launch/initialize_map_scale_ratio.launch">
+        <arg name="roomba" default="$(arg follower)"/>
+    </include>
+</launch>

@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- roomba number -->
+    <arg name="leader"   default="roomba1"/>
+    <arg name="follower" default="roomba3"/>
+
+
+    <!-- launch node -->
+    <!-- for server -->
+    <include file="$(find collaborative_vslam)/launch/collaborative_vslam.launch">
+        <arg name="leader"   default="$(arg leader)"/>
+        <arg name="follower" default="$(arg follower)"/>
+    </include>
+
+    <!-- for leader -->
+    <include file="$(find collaborative_vslam)/launch/unzipping_realtime.launch">
+        <arg name="roomba" default="$(arg leader)"/>
+    </include>
+    <include file="$(find collaborative_vslam)/launch/get_relative_angle.launch">
+        <arg name="roomba" default="$(arg leader)"/>
+    </include>
+
+    <!-- for follower -->
+    <include file="$(find collaborative_vslam)/launch/creat_roomba_mask_image.launch">
+        <arg name="roomba" default="$(arg follower)"/>
+    </include>
+    <include file="$(find collaborative_vslam)/launch/unzipping_realtime.launch">
+        <arg name="roomba" default="$(arg follower)"/>
+    </include>
+    <include file="$(find collaborative_vslam)/launch/yolo.launch">
+        <arg name="roomba" default="$(arg follower)"/>
+    </include>
+    <include file="$(find collaborative_vslam)/launch/get_relative_position.launch">
+        <arg name="roomba" default="$(arg follower)"/>
+    </include>
+
+    <!-- Visualization - RViz-->
+    <node pkg="rviz" type="rviz" name="co_leader_rviz" args="-d $(find collaborative_vslam)/config/rviz/test_for_bag_without_co-vslam_leader.rviz" output="screen"/>
+    <node pkg="rviz" type="rviz" name="co_follower_rviz" args="-d $(find collaborative_vslam)/config/rviz/test_for_bag_without_co-vslam_follower.rviz" output="screen"/>
+
+    <!-- rosbag -->
+    <include file="$(find collaborative_vslam)/launch/record_bag_realtime.launch"/>
+</launch>
