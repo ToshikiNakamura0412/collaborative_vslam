@@ -4,7 +4,7 @@
     <arg name="follower" default="roomba3"/>
 
     <!-- record bag -->
-    <node pkg="rosbag" type="record" name="rosbag_record" args="record -o /home/amsl/bagfiles/buddy_collab/realtime.bag
+    <node pkg="rosbag" type="record" name="rosbag_record" args="record -o /home/amsl/bagfiles/nakamura/collab_bag_test/collab_bag_test.bag
         /$(arg leader)/scale_ratio
         /$(arg leader)/orb_slam3/visualize_sign
         /$(arg leader)/orb_slam3/lost_sign
@@ -35,6 +35,7 @@
         /$(arg follower)/collaborative_map
         /system/map_origin
         /leader_pose_on_return
-        /map_origin_for_follower
+        /system/map_origin_for_follower
+        /map_origin_for_followermap_origin_for_follower
         /follower_pose_on_return"/>
 </launch>

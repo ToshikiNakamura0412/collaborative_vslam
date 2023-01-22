@@ -52,5 +52,7 @@
     </include>
 
     <!-- Visualization - RViz-->
-    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find collaborative_vslam)/config/rviz/co-vslam.rviz" output="screen"/>
+    <!-- <node pkg="rviz" type="rviz" name="rviz" args="-d $(find collaborative_vslam)/config/rviz/co-vslam.rviz" output="screen"/> -->
+    <node pkg="rviz" type="rviz" name="co_leader_rviz" args="-d $(find collaborative_vslam)/config/rviz/test_for_bag_without_co-vslam_leader.rviz" output="screen"/>
+    <node pkg="rviz" type="rviz" name="co_follower_rviz" args="-d $(find collaborative_vslam)/config/rviz/test_for_bag_without_co-vslam_follower.rviz" output="screen"/>
 </launch>
