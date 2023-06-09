@@ -1,8 +1,8 @@
 # collaborative_vslam
 
 ## Dependencies
-- [ORB_SLAM3](https://github.com/amslabtech/Roomba)
-- [orb_slam3_ros_wrapper](https://github.com/ToshikiNakamura0412/ORB_SLAM3)
+- [ORB_SLAM3](https://github.com/ToshikiNakamura0412/ORB_SLAM3)
+- [orb_slam3_ros_wrapper](https://github.com/ToshikiNakamura0412/orb_slam3_ros_wrapper)
 - [darknet_ros](https://github.com/ToshikiNakamura0412/darknet_ros)
 - [object_detector](https://github.com/TakuKarasawa/object_detector)
 - [object_color_detector](https://github.com/TakuKarasawa/object_color_detector)
