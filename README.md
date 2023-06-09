@@ -13,5 +13,5 @@
 ```
 cd <YOUR_CATKIN_WS>/src
 git clone --depth=1 https://github.com/ToshikiNakamura0412/collaborative_vslam.git
-catkin build collaborative_vslam.git
+catkin build collaborative_vslam
 ```
